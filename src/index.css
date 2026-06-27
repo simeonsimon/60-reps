@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Skin palettes. The Skins engine sets data-skin on <html>; each block here
+   redefines the CSS variables that Tailwind's color tokens resolve from, so
+   the entire UI re-themes instantly with zero React re-render cost.
+   Channels are space-separated RGB triplets (consumed via rgb(var(--x) / a)).
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root,
+[data-skin='normal'] {
+  --c-base: 10 10 11;        /* near-black */
+  --c-surface: 22 22 26;
+  --c-elevated: 32 32 38;
+  --c-ink: 245 245 247;
+  --c-muted: 148 148 158;
+  --c-accent: 122 162 255;   /* vivid periwinkle */
+}
+
+[data-skin='wireframe'] {
+  --c-base: 6 8 10;
+  --c-surface: 14 18 22;
+  --c-elevated: 20 26 32;
+  --c-ink: 224 255 244;
+  --c-muted: 110 140 132;
+  --c-accent: 56 255 180;    /* neon mint */
+}
+
+[data-skin='karat'] {
+  --c-base: 18 16 12;        /* deep charcoal, warm */
+  --c-surface: 30 26 20;
+  --c-elevated: 42 36 26;
+  --c-ink: 247 240 224;
+  --c-muted: 168 154 122;
+  --c-accent: 226 183 92;    /* brilliant gold */
+}
+
+[data-skin='cedar'] {
+  --c-base: 30 24 18;        /* matte earth */
+  --c-surface: 44 35 27;
+  --c-elevated: 58 46 35;
+  --c-ink: 240 228 212;
+  --c-muted: 176 150 122;
+  --c-accent: 197 124 74;    /* warm cedar terracotta */
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--c-base));
+  color: rgb(var(--c-ink));
+  font-family: 'Inter', system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.5s ease;
+}
+
+/* Prevent the whole page from scrolling/bouncing on mobile — the app is a
+   fixed full-viewport surface and manages its own internal scroll regions. */
+#root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* Hide scrollbars on internal scroll regions while keeping them scrollable. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Disable text selection on the interactive 3D / control surfaces. */
+.select-none-deep,
+.select-none-deep * {
+  user-select: none;
+  -webkit-user-select: none;
+}
