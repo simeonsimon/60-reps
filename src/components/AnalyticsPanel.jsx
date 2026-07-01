@@ -2,7 +2,7 @@ import { useSkin } from '../context/SkinContext.jsx'
 import { useStore } from '../store/StoreProvider.jsx'
 import ClimbChart from './ClimbChart.jsx'
 import Heatmap from './Heatmap.jsx'
-import { currentStreak, GOAL } from '../lib/habits.js'
+import { currentStreak, isScheduledOn, GOAL } from '../lib/habits.js'
 
 function Stat({ label, value }) {
   return (
@@ -43,7 +43,7 @@ export default function AnalyticsPanel({ habit }) {
       <div>
         <div className="mb-2 text-sm font-semibold text-ink">Consistency</div>
         <div className="rounded-3xl bg-surface p-4">
-          <Heatmap events={habit.history} accent={accent} />
+          <Heatmap events={habit.history} accent={accent} isScheduled={(d) => isScheduledOn(habit, d)} />
         </div>
       </div>
     </div>

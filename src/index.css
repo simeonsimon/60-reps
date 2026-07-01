@@ -50,6 +50,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Kill double-tap-to-zoom delays and accidental gestures on controls. */
+button,
+[role='button'],
+input,
+label {
+  touch-action: manipulation;
+}
+
 html,
 body,
 #root {
@@ -83,9 +91,11 @@ body {
   display: none;
 }
 
-/* Disable text selection on the interactive 3D / control surfaces. */
+/* Disable text selection on the interactive 3D / control surfaces, and the
+   iOS long-press callout (the hold-to-log gesture would otherwise pop it). */
 .select-none-deep,
 .select-none-deep * {
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }

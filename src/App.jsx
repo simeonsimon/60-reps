@@ -66,7 +66,10 @@ export default function App() {
       />
 
       {/* Top bar (minimal, floating) */}
-      <header className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5 pt-4">
+      <header
+        className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+      >
         <div className="flex items-center gap-2 text-ink">
           <span className="text-accent">
             <MountainIcon width={20} height={20} />
@@ -83,7 +86,10 @@ export default function App() {
       </header>
 
       {/* Achievement toasts */}
-      <div className="pointer-events-none absolute inset-x-0 top-14 z-40 flex flex-col items-center gap-2 px-4">
+      <div
+        className="pointer-events-none absolute inset-x-0 z-40 flex flex-col items-center gap-2 px-4"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.25rem)' }}
+      >
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div
@@ -102,7 +108,7 @@ export default function App() {
       {/* Main pager */}
       <main className="relative min-h-0 flex-1">
         {habits.length > 0 ? (
-          <HabitCarousel onUnlock={handleUnlock} />
+          <HabitCarousel onUnlock={handleUnlock} paused={sheet !== null} />
         ) : (
           <div className="grid h-full place-items-center px-8 text-center">
             <div>
@@ -120,7 +126,10 @@ export default function App() {
       </main>
 
       {/* Bottom dock: page dots + action bar */}
-      <div className="relative z-30 px-4 pb-5 pt-1">
+      <div
+        className="relative z-30 px-4 pt-1"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.875rem)' }}
+      >
         {habits.length > 1 && (
           <div className="mb-3 flex justify-center gap-1.5">
             {habits.map((h, i) => (

@@ -34,6 +34,32 @@ export function completedToday(habit, now = Date.now()) {
   return !!habit.lastCompletedAt && isSameDay(habit.lastCompletedAt, now)
 }
 
+// ── Scheduled days ──────────────────────────────────────────────────────────
+// habit.days: array of JS weekday numbers (0 = Sunday). Absent/empty/all-7
+// means the habit runs every day. Off-days never count as misses.
+
+// Monday-first display order for pickers; labels index by getDay().
+export const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
+export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const WEEKDAY_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+export function isScheduledOn(habit, t) {
+  if (!habit.days || habit.days.length === 0 || habit.days.length >= 7) return true
+  return habit.days.includes(new Date(t).getDay())
+}
+
+export function isScheduledToday(habit, now = Date.now()) {
+  return isScheduledOn(habit, now)
+}
+
+// "Every day" / "Mon · Wed · Fri" — for cards and pickers.
+export function daysLabel(habit) {
+  if (!habit.days || habit.days.length === 0 || habit.days.length >= 7) return 'Every day'
+  return WEEKDAY_ORDER.filter((d) => habit.days.includes(d))
+    .map((d) => WEEKDAY_LABELS[d])
+    .join(' · ')
+}
+
 // Fraction of the current numeric session (progress habits only).
 export function sessionPct(habit) {
   if (habit.type !== 'progress' || !habit.target) return 0
@@ -42,7 +68,9 @@ export function sessionPct(habit) {
 
 // Current streak in days (consecutive days with at least one logged rep,
 // counting back from today or yesterday). A missed day pauses but the streak
-// simply reflects the current run — history is never wiped.
+// simply reflects the current run — history is never wiped. Days the habit
+// isn't scheduled on are skipped entirely: they never break a streak, but a
+// bonus rep logged on one still counts toward it.
 export function currentStreak(habit, now = Date.now()) {
   if (!habit.history || habit.history.length === 0) return 0
   const days = new Set(habit.history.map((e) => startOfDay(e.t)))
@@ -50,9 +78,16 @@ export function currentStreak(habit, now = Date.now()) {
   let cursor = startOfDay(now)
   if (!days.has(cursor)) cursor -= DAY // allow today to be empty so far
   let streak = 0
-  while (days.has(cursor)) {
-    streak++
-    cursor -= DAY
+  let guard = 0
+  while (guard++ < 3700) {
+    if (days.has(cursor)) {
+      streak++
+      cursor -= DAY
+    } else if (!isScheduledOn(habit, cursor)) {
+      cursor -= DAY // off-day with no bonus rep — neutral, keep walking
+    } else {
+      break // a scheduled day with nothing logged ends the run
+    }
   }
   return streak
 }

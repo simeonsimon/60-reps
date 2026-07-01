@@ -6,7 +6,9 @@ const CELL = 13
 const GAP = 3
 
 // GitHub-style contribution calendar built from completion events.
-export default function Heatmap({ events = [], accent = '#7aa2ff' }) {
+// `isScheduled(dateMs)` (optional) marks which days the habit runs on; empty
+// off-days render nearly invisible so rest days never read as misses.
+export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }) {
   const counts = {}
   let max = 1
   for (const e of events) {
@@ -32,8 +34,11 @@ export default function Heatmap({ events = [], accent = '#7aa2ff' }) {
   const w = WEEKS * (CELL + GAP)
   const h = 7 * (CELL + GAP)
 
-  const fillFor = (count) => {
-    if (count <= 0) return 'rgb(var(--c-elevated))'
+  const fillFor = (count, date) => {
+    if (count <= 0) {
+      const offDay = isScheduled && !isScheduled(date)
+      return offDay ? 'rgb(var(--c-elevated) / 0.35)' : 'rgb(var(--c-elevated))'
+    }
     const alpha = 0.3 + 0.7 * Math.min(1, count / max)
     return hexToRgba(accent, alpha)
   }
@@ -49,7 +54,7 @@ export default function Heatmap({ events = [], accent = '#7aa2ff' }) {
             width={CELL}
             height={CELL}
             rx={3}
-            fill={fillFor(c.count)}
+            fill={fillFor(c.count, c.date)}
           >
             <title>{new Date(c.date).toLocaleDateString()} — {c.count} rep{c.count === 1 ? '' : 's'}</title>
           </rect>

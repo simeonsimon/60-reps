@@ -14,10 +14,12 @@ import {
   sessionPct,
   currentStreak,
   isMastered,
+  isScheduledToday,
+  daysLabel,
 } from '../lib/habits.js'
 
-export default function HabitCard({ habit, active, onUnlock }) {
-  const { complete, removeHabit } = useStore()
+export default function HabitCard({ habit, active, onUnlock, paused = false }) {
+  const { complete, removeHabit, habits, setActive } = useStore()
   const { def } = useSkin()
   const progressRef = useRef(0)
   const [uiProgress, setUiProgress] = useState(0)
@@ -29,6 +31,9 @@ export default function HabitCard({ habit, active, onUnlock }) {
   const doneToday = habit.type === 'single' && completedToday(habit)
   const mastered = isMastered(habit)
   const streak = currentStreak(habit)
+  const restDay = !isScheduledToday(habit)
+  const hasSchedule = daysLabel(habit) !== 'Every day'
+  const anchor = habit.anchorId ? habits.find((h) => h.id === habit.anchorId) : null
 
   function handleComplete() {
     progressRef.current = 0
@@ -51,6 +56,14 @@ export default function HabitCard({ habit, active, onUnlock }) {
     if (res.unlocked?.length) {
       audio.achievement()
       onUnlock?.(res.unlocked)
+    }
+    // Habit stacking: after banking a rep, glide to the habit chained onto
+    // this one (if it still needs doing today) so the next action is teed up.
+    if (res.meta.repsGained > 0) {
+      const nextIdx = habits.findIndex((h) => h.anchorId === habit.id && !completedToday(h))
+      if (nextIdx !== -1 && habits[nextIdx].id !== habit.id) {
+        setTimeout(() => setActive(nextIdx), 1200)
+      }
     }
   }
 
@@ -106,7 +119,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
       {/* ── Hero 3D viewport (the completion surface) ───────────────────── */}
       <div className="relative min-h-0 flex-1">
         {active ? (
-          <HabitScene habit={habit} def={def} progressRef={progressRef} burst={burst} active={active} />
+          <HabitScene habit={habit} def={def} progressRef={progressRef} burst={burst} active={active} paused={paused} />
         ) : (
           // Off-screen cards skip the WebGL context entirely (keeps GPU load
           // and context count down); a skin-tinted gradient stands in.
@@ -117,15 +130,35 @@ export default function HabitCard({ habit, active, onUnlock }) {
         )}
 
         {/* Emoji + type badge, floating top-left (clears the app header) */}
-        <div className="pointer-events-none absolute left-5 top-16 flex items-center gap-2">
+        <div
+          className="pointer-events-none absolute left-5 flex items-center gap-2"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)' }}
+        >
           <span className="text-3xl drop-shadow-lg">{habit.emoji || '⛰️'}</span>
           <span className="rounded-full bg-surface/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted backdrop-blur">
             {habit.type === 'single' ? 'Daily' : habit.type === 'multi' ? 'Multi' : 'Progress'}
           </span>
+          {hasSchedule && (
+            <span
+              className={`rounded-full px-2.5 py-1 text-[11px] font-medium backdrop-blur ${
+                restDay ? 'bg-surface/70 text-muted' : 'bg-accent-soft text-accent'
+              }`}
+            >
+              {restDay ? '💤 Rest day' : daysLabel(habit)}
+            </span>
+          )}
+          {anchor && (
+            <span className="rounded-full bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-muted backdrop-blur">
+              ⛓ after {anchor.emoji || ''} {anchor.title.length > 14 ? anchor.title.slice(0, 14) + '…' : anchor.title}
+            </span>
+          )}
         </div>
 
         {mastered && (
-          <div className="pointer-events-none absolute right-5 top-16 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent backdrop-blur">
+          <div
+            className="pointer-events-none absolute right-5 rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent backdrop-blur"
+            style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)' }}
+          >
             ✦ Summit reached
           </div>
         )}
@@ -165,7 +198,13 @@ export default function HabitCard({ habit, active, onUnlock }) {
                 exit={{ opacity: 0 }}
                 className="pointer-events-none absolute bottom-4 rounded-full bg-surface/60 px-4 py-2 text-xs font-medium text-muted backdrop-blur"
               >
-                {doneToday ? 'Logged today ✓ — see you tomorrow' : 'Press & hold to log a rep'}
+                {doneToday
+                  ? 'Logged today ✓ — see you tomorrow'
+                  : restDay
+                    ? 'Rest day 💤 — bonus reps still count'
+                    : anchor && !completedToday(anchor)
+                      ? `First: ${anchor.title} — then hold to log this`
+                      : 'Press & hold to log a rep'}
               </motion.div>
             )}
           </AnimatePresence>

@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import * as THREE from 'three'
 import { hashSeed } from '../lib/rng.js'
+import { maxDpr, prefersReducedMotion } from '../lib/device.js'
 import Terrain from './Terrain.jsx'
 import { Asset } from './LowPoly.jsx'
 import { makeLayout, visibleAssets } from './population.js'
@@ -32,7 +33,8 @@ function Diorama({ seed, def, reps, progressRef, burst }) {
     const target = 1 + hold * 0.14 + bounce.current
     scaleRef.current = THREE.MathUtils.damp(scaleRef.current, target, 12, delta)
     group.current.scale.setScalar(scaleRef.current)
-    group.current.rotation.y += delta * 0.12
+    // Skip the idle spin for users who prefer reduced motion (also saves power).
+    if (!prefersReducedMotion()) group.current.rotation.y += delta * 0.12
   })
 
   return (
@@ -45,7 +47,7 @@ function Diorama({ seed, def, reps, progressRef, burst }) {
   )
 }
 
-function HabitScene({ habit, def, progressRef, burst = 0, active = true }) {
+function HabitScene({ habit, def, progressRef, burst = 0, active = true, paused = false }) {
   const seed = useMemo(() => hashSeed(habit.id), [habit.id])
 
   // Nudge R3F to measure its container after mount. In some environments the
@@ -83,10 +85,14 @@ function HabitScene({ habit, def, progressRef, burst = 0, active = true }) {
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      // Phones cap at 1.5x — visually crisp, roughly half the GPU work (and
+      // battery drain) of rendering at the iPhone's native 3x.
+      dpr={[1, maxDpr()]}
       camera={{ position: [0, 4.6, 9], fov: 42 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      frameloop={active ? 'always' : 'demand'}
+      // Stop rendering entirely while a sheet covers the scene or the card is
+      // off-screen; rAF also pauses automatically when the app is backgrounded.
+      frameloop={active && !paused ? 'always' : 'demand'}
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
     >

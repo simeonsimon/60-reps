@@ -15,7 +15,8 @@ export default function Sheet({ open, onClose, title, children }) {
             onClick={onClose}
           />
           <motion.div
-            className="no-scrollbar fixed inset-x-0 bottom-0 z-50 max-h-[88vh] overflow-y-auto rounded-t-5xl border-t border-white/10 bg-base px-5 pb-10 pt-3 shadow-card"
+            className="no-scrollbar fixed inset-x-0 bottom-0 z-50 max-h-[88dvh] overflow-y-auto rounded-t-5xl border-t border-white/10 bg-base px-5 pt-3 shadow-card"
+            style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 2rem)' }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}

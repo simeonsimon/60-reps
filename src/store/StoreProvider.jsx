@@ -13,6 +13,11 @@ function reducer(state, action) {
         ...state,
         habits: state.habits.map((h) => (h.id === action.id ? action.habit : h)),
       }
+    case 'PATCH_HABIT':
+      return {
+        ...state,
+        habits: state.habits.map((h) => (h.id === action.id ? { ...h, ...action.patch } : h)),
+      }
     case 'ADD_HABIT':
       return { ...state, habits: [...state.habits, action.habit], activeIndex: state.habits.length }
     case 'REMOVE_HABIT': {
@@ -97,6 +102,9 @@ export function StoreProvider({ children }) {
       },
       addHabit(habit) {
         dispatch({ type: 'ADD_HABIT', habit })
+      },
+      updateHabit(id, patch) {
+        dispatch({ type: 'PATCH_HABIT', id, patch })
       },
       removeHabit(id) {
         dispatch({ type: 'REMOVE_HABIT', id })

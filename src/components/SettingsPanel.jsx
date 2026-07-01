@@ -1,5 +1,6 @@
 import { useStore } from '../store/StoreProvider.jsx'
 import { useSkin, SKIN_LIST } from '../context/SkinContext.jsx'
+import ReminderSettings from './ReminderSettings.jsx'
 
 function Toggle({ checked, onChange }) {
   return (
@@ -42,6 +43,12 @@ export default function SettingsPanel() {
         <Row label="Super! Boring" hint="Unlock skins, quests, premium audio & badges">
           <Toggle checked={premium} onChange={(v) => setProfile({ premium: v })} />
         </Row>
+      </div>
+
+      {/* Per-habit push reminders */}
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">Reminders</h4>
+        <ReminderSettings />
       </div>
 
       {/* Skins */}

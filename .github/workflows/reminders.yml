@@ -1,0 +1,70 @@
+# Delivers per-habit push reminders every 15 minutes.
+#
+# Reads push/config.json (kept up to date by the push-sync workflow) and
+# Web-Pushes whatever falls in the current 15-minute slot. Public-repo Actions
+# minutes are free; a run with nothing due exits in seconds.
+#
+# NOTE: GitHub disables scheduled workflows after ~60 days without repo
+# activity. Any commit (including a reminder re-sync from the app) resets it.
+name: Send habit reminders
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exit early if no config
+        id: cfg
+        run: |
+          if [ -f push/config.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No push/config.json — sync reminders from the app first."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.present == 'true'
+        with:
+          node-version: 20
+
+      - name: Send due reminders
+        if: steps.cfg.outputs.present == 'true'
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          # Install only web-push in an isolated dir (fast; skips the app's deps)
+          mkdir -p /tmp/sender
+          cp scripts/send-reminders.mjs /tmp/sender/
+          cd /tmp/sender
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund web-push > /dev/null
+          node send-reminders.mjs "$GITHUB_WORKSPACE/push/config.json"
+
+      - name: Flag expired subscription (once)
+        if: steps.cfg.outputs.present == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f /tmp/sender/expired.flag ]; then
+            EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "push subscription expired in:title" --json number --jq 'length')
+            if [ "$EXISTING" = "0" ]; then
+              gh issue create --repo "$GITHUB_REPOSITORY" \
+                --title "⚠️ Push subscription expired" \
+                --body "Reminders can't be delivered — the iPhone's push subscription is gone. Open 60 Reps, go to Settings → Reminders, tap **Enable notifications**, then **Save reminders to cloud** again."
+            fi
+          fi

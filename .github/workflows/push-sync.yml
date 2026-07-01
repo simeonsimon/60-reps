@@ -1,0 +1,68 @@
+# Saves reminder settings synced from the app.
+#
+# The app opens a prefilled issue titled "push-sync" whose body carries a JSON
+# block (push subscription + reminder times). This workflow validates it,
+# commits it to push/config.json, and closes the issue. Only issues opened by
+# the repo owner are accepted.
+name: Sync push reminders
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  sync:
+    if: github.event.issue.title == 'push-sync' && github.event.issue.user.login == github.repository_owner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract and validate config
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          node - <<'EOF'
+          const { writeFileSync, mkdirSync } = require('fs')
+          const body = process.env.BODY || ''
+          const match = body.match(/```json\s*([\s\S]*?)```/)
+          if (!match) { console.error('No JSON block found in issue body.'); process.exit(1) }
+          const cfg = JSON.parse(match[1])
+          if (cfg.v !== 1) throw new Error('Unsupported config version')
+          if (!cfg.subscription || !String(cfg.subscription.endpoint).startsWith('https://'))
+            throw new Error('Missing/invalid push subscription')
+          if (!Array.isArray(cfg.reminders)) throw new Error('Missing reminders array')
+          for (const r of cfg.reminders) {
+            if (!/^\d{2}:\d{2}$/.test(String(r.time))) throw new Error(`Bad time: ${r.time}`)
+            if (r.days !== null && r.days !== undefined &&
+                (!Array.isArray(r.days) || r.days.some((d) => !Number.isInteger(d) || d < 0 || d > 6)))
+              throw new Error('Bad days array')
+          }
+          if (typeof cfg.tz !== 'string' || !cfg.tz) cfg.tz = 'Atlantic/Canary'
+          mkdirSync('push', { recursive: true })
+          writeFileSync('push/config.json', JSON.stringify(cfg, null, 2) + '\n')
+          console.log(`Saved ${cfg.reminders.length} reminder(s), tz=${cfg.tz}`)
+          EOF
+
+      - name: Commit config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add push/config.json
+          if git diff --cached --quiet; then
+            echo "Config unchanged."
+          else
+            git commit -m "chore: sync push reminders from app"
+            git push
+          fi
+
+      - name: Close issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COUNT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('push/config.json','utf8')).reminders.length)")
+          gh issue close ${{ github.event.issue.number }} \
+            --comment "✅ Reminders synced — $COUNT active. You can delete this issue or just leave it."
