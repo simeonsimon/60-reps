@@ -16,8 +16,18 @@ import { SkinProvider } from './context/SkinContext.jsx'
 import { registerSW } from 'virtual:pwa-register'
 
 // Auto-updating service worker: new deploys are picked up on the next launch
-// without any prompt. No-op in dev.
-registerSW({ immediate: true })
+// without any prompt. No-op in dev. iOS PWAs can sit on a stale build for
+// days, so also re-check whenever the app returns to the foreground.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, reg) {
+    if (!reg) return
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update()
+    })
+    setInterval(() => reg.update(), 60 * 60 * 1000)
+  },
+})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

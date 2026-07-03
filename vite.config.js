@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
 import tailwindConfig from './tailwind.config.js'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 // base: './' keeps all asset URLs relative so the built `dist/` folder works
 // no matter where it is served from — including a GitHub Pages project page
@@ -14,6 +17,9 @@ import tailwindConfig from './tailwind.config.js'
 // is launched from — config discovery is otherwise relative to process.cwd().
 export default defineConfig({
   base: './',
+  // Shown in Settings so a phone running a stale service-worker build is
+  // diagnosable at a glance.
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
     VitePWA({

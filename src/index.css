@@ -82,6 +82,14 @@ body {
   overflow: hidden;
 }
 
+/* Sheet height cap with a vh fallback: dvh needs iOS 16.4+, and without any
+   cap a long sheet (e.g. New Habit) grows past the top of the screen and its
+   body never becomes scrollable — the form is simply unreachable. */
+.sheet-max-h {
+  max-height: 86vh;
+  max-height: 88dvh;
+}
+
 /* Hide scrollbars on internal scroll regions while keeping them scrollable. */
 .no-scrollbar {
   scrollbar-width: none;

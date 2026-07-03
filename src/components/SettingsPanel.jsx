@@ -104,6 +104,8 @@ export default function SettingsPanel() {
           Reset all data
         </button>
       </div>
+
+      <p className="pb-1 text-center text-xs text-muted">60 Reps v{__APP_VERSION__}</p>
     </div>
   )
 }

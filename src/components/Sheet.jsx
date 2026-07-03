@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
 import { CloseIcon } from './icons.jsx'
 
@@ -14,6 +14,30 @@ import { CloseIcon } from './icons.jsx'
 export default function Sheet({ open, onClose, title, children }) {
   const y = useMotionValue(0) // manual drag offset, separate from enter/exit
   const velRef = useRef(0)
+  const [kb, setKb] = useState(0) // iOS keyboard overlap in px
+
+  // The iOS keyboard overlays the layout viewport instead of resizing it, so a
+  // bottom sheet's lower half (incl. the submit button) ends up behind the
+  // keys. Track the visual viewport and lift the sheet by the overlap.
+  useEffect(() => {
+    if (!open) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => setKb(Math.max(0, window.innerHeight - vv.height - vv.offsetTop))
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    update()
+    // Standalone-PWA quirk: focusing an input can scroll the whole page and
+    // leave hit-testing offset from the visuals — snap back after blur.
+    const reanchor = () => requestAnimationFrame(() => window.scrollTo(0, 0))
+    document.addEventListener('focusout', reanchor)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+      document.removeEventListener('focusout', reanchor)
+      setKb(0)
+    }
+  }, [open])
 
   function startDrag(e) {
     if (e.button !== undefined && e.button !== 0) return
@@ -64,15 +88,16 @@ export default function Sheet({ open, onClose, title, children }) {
           />
           {/* Outer layer: enter/exit slide. Inner layer: manual drag offset. */}
           <motion.div
-            className="fixed inset-x-0 bottom-0 z-50"
+            className="fixed inset-x-0 z-50"
+            style={{ bottom: kb }}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 340, damping: 36 }}
           >
             <motion.div
-              style={{ y }}
-              className="flex max-h-[88dvh] flex-col rounded-t-5xl border-t border-white/10 bg-base shadow-card"
+              style={{ y, maxHeight: kb ? `${window.innerHeight - kb - 10}px` : undefined }}
+              className="sheet-max-h flex flex-col rounded-t-5xl border-t border-white/10 bg-base shadow-card"
             >
               {/* Drag handle: grab bar + header. touch-action none here (and
                   only here) so the dismiss gesture wins over native panning. */}

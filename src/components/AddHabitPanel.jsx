@@ -79,7 +79,15 @@ export default function AddHabitPanel({ onClose }) {
   }
 
   return (
-    <div className="space-y-5">
+    // A real <form> so the iOS keyboard's "go" key submits — on a phone the
+    // save button can sit behind the keyboard, so Enter must work too.
+    <form
+      className="space-y-5"
+      onSubmit={(e) => {
+        e.preventDefault()
+        save()
+      }}
+    >
       {/* ── Quick start: tap a life, tap Start ─────────────────────────── */}
       <div>
         <Label>Quick start</Label>
@@ -87,6 +95,7 @@ export default function AddHabitPanel({ onClose }) {
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
+              type="button"
               onClick={() => applyTemplate(t)}
               className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
                 template === t.id ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
@@ -107,6 +116,7 @@ export default function AddHabitPanel({ onClose }) {
             setTemplate(null)
           }}
           placeholder="e.g. Read 10 pages"
+          enterKeyHint="go"
           className="w-full rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
         />
       </div>
@@ -117,6 +127,7 @@ export default function AddHabitPanel({ onClose }) {
           {EMOJIS.map((e) => (
             <button
               key={e}
+              type="button"
               onClick={() => setEmoji(e)}
               className={`grid h-10 w-10 place-items-center rounded-xl text-xl transition-colors ${
                 emoji === e ? 'bg-accent-soft ring-1 ring-accent' : 'bg-surface'
@@ -134,6 +145,7 @@ export default function AddHabitPanel({ onClose }) {
           {HABIT_TYPES.map((t) => (
             <button
               key={t.id}
+              type="button"
               onClick={() => setType(t.id)}
               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors ${
                 type === t.id ? 'border-accent bg-accent-soft' : 'border-white/5 bg-surface'
@@ -182,6 +194,7 @@ export default function AddHabitPanel({ onClose }) {
             return (
               <button
                 key={d}
+                type="button"
                 onClick={() => toggleDay(d)}
                 aria-pressed={on}
                 className={`h-10 w-10 rounded-full text-sm font-bold transition-colors ${
@@ -205,6 +218,7 @@ export default function AddHabitPanel({ onClose }) {
           <Label>Stack after (optional)</Label>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1">
             <button
+              type="button"
               onClick={() => setAnchorId(null)}
               className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
                 anchorId === null ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
@@ -215,6 +229,7 @@ export default function AddHabitPanel({ onClose }) {
             {habits.map((h) => (
               <button
                 key={h.id}
+                type="button"
                 onClick={() => setAnchorId(h.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
                   anchorId === h.id ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
@@ -243,7 +258,7 @@ export default function AddHabitPanel({ onClose }) {
             className="rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
           />
           {reminderTime && (
-            <button onClick={() => setReminderTime('')} className="text-xs font-medium text-muted underline">
+            <button type="button" onClick={() => setReminderTime('')} className="text-xs font-medium text-muted underline">
               clear
             </button>
           )}
@@ -253,14 +268,17 @@ export default function AddHabitPanel({ onClose }) {
         </p>
       </div>
 
-      <button
-        onClick={save}
-        disabled={!canSave}
-        className="w-full rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold disabled:opacity-40"
-        style={{ color: 'rgb(var(--c-base))' }}
-      >
-        Start the climb
-      </button>
-    </div>
+      {/* Sticky: stays visible while the long form scrolls beneath it. */}
+      <div className="sticky bottom-0 -mx-1 bg-gradient-to-t from-base via-base/90 to-transparent px-1 pb-1 pt-3">
+        <button
+          type="submit"
+          disabled={!canSave}
+          className="w-full rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold disabled:opacity-40"
+          style={{ color: 'rgb(var(--c-base))' }}
+        >
+          Start the climb
+        </button>
+      </div>
+    </form>
   )
 }
