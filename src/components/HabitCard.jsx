@@ -22,7 +22,10 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
   const { complete, removeHabit, habits, setActive } = useStore()
   const { def } = useSkin()
   const progressRef = useRef(0)
-  const [uiProgress, setUiProgress] = useState(0)
+  // The ascent bar and its label are mutated directly (no state) so the hold
+  // gesture never re-renders the card mid-frame — key for smooth iOS holds.
+  const holdBarRef = useRef(null)
+  const holdLabelRef = useRef(null)
   const [burst, setBurst] = useState(0)
   const [shake, setShake] = useState(false)
   const lastTick = useRef(0)
@@ -35,9 +38,16 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
   const hasSchedule = daysLabel(habit) !== 'Every day'
   const anchor = habit.anchorId ? habits.find((h) => h.id === habit.anchorId) : null
 
+  function paintHold(p) {
+    progressRef.current = p
+    if (holdBarRef.current) holdBarRef.current.style.transform = `scaleX(${p})`
+    if (holdLabelRef.current) {
+      holdLabelRef.current.textContent = p > 0.85 ? 'Send it!' : p > 0.45 ? 'Climb…' : 'Grip…'
+    }
+  }
+
   function handleComplete() {
-    progressRef.current = 0
-    setUiProgress(0)
+    paintHold(0)
     const prevReps = habit.reps
     const res = complete(habit.id)
     if (res.meta.blocked) {
@@ -77,12 +87,11 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
   }
 
   const { handlers, holding, cancel } = useLongPress({
-    duration: 850,
+    duration: 1600,
     disabled: doneToday,
     onStart: () => audio.resume(),
     onProgress: (p) => {
-      progressRef.current = p
-      setUiProgress(p)
+      paintHold(p)
       const now = performance.now()
       if (now - lastTick.current > 110) {
         lastTick.current = now
@@ -90,10 +99,7 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
       }
     },
     onComplete: handleComplete,
-    onCancel: () => {
-      progressRef.current = 0
-      setUiProgress(0)
-    },
+    onCancel: () => paintHold(0),
   })
 
   const onPointerDown = (e) => {
@@ -104,7 +110,10 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
     if (!holding) return
     const dx = e.clientX - startPt.current.x
     const dy = e.clientY - startPt.current.y
-    if (Math.hypot(dx, dy) > 14) cancel() // a swipe, not a hold — let the carousel take it
+    if (Math.hypot(dx, dy) > 14) {
+      cancel() // a swipe, not a hold — let the carousel take it
+      paintHold(0)
+    }
   }
 
   const pct = goalPct(habit)
@@ -174,19 +183,27 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
           onPointerLeave={handlers.onPointerLeave}
           onPointerCancel={handlers.onPointerCancel}
         >
-          {/* Charging ring — appears as you hold */}
+          {/* Ascent bar — sits at the bottom of the scene, clear of the finger.
+              Fill and label are mutated via refs (compositor-only scaleX), so
+              the hold stays smooth even alongside the WebGL scene on iPhone. */}
           <div
-            className="relative grid place-items-center transition-opacity duration-200"
+            className="pointer-events-none absolute inset-x-6 bottom-4 transition-opacity duration-150"
             style={{ opacity: holding ? 1 : 0 }}
           >
-            {holding && (
-              <span className="absolute h-28 w-28 rounded-full border-2 border-accent/40 animate-pulse-ring" />
-            )}
-            <ProgressRing value={uiProgress} size={112} stroke={6} glow>
-              <span className="text-sm font-semibold text-accent">
-                {uiProgress > 0.8 ? 'Send it!' : uiProgress > 0.4 ? 'Climb…' : 'Grip…'}
-              </span>
-            </ProgressRing>
+            <div
+              ref={holdLabelRef}
+              className="mb-2 text-center text-sm font-bold tracking-wide text-accent"
+              style={{ textShadow: '0 1px 8px rgb(0 0 0 / 0.6)' }}
+            >
+              Grip…
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-surface/70 backdrop-blur">
+              <div
+                ref={holdBarRef}
+                className="h-full w-full origin-left rounded-full bg-accent"
+                style={{ transform: 'scaleX(0)' }}
+              />
+            </div>
           </div>
 
           {/* Idle hint */}

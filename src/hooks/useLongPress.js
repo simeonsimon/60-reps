@@ -28,8 +28,10 @@ export function useLongPress({
 
   const tick = useCallback(
     (now) => {
+      // Clamp low too: the first rAF timestamp can predate the performance.now()
+      // captured in begin(), which would briefly yield a negative progress.
       const elapsed = now - startRef.current
-      const p = Math.min(elapsed / duration, 1)
+      const p = Math.min(Math.max(elapsed / duration, 0), 1)
       setProgress(p)
       onProgress?.(p)
 
