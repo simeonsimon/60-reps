@@ -184,7 +184,7 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
             )}
             <ProgressRing value={uiProgress} size={112} stroke={6} glow>
               <span className="text-sm font-semibold text-accent">
-                {Math.round(uiProgress * 100)}%
+                {uiProgress > 0.8 ? 'Send it!' : uiProgress > 0.4 ? 'Climb…' : 'Grip…'}
               </span>
             </ProgressRing>
           </div>
