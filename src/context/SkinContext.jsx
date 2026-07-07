@@ -29,6 +29,24 @@ export const SKINS = {
     material: { flatShading: true, wireframe: false, metalness: 0.05, roughness: 0.95 },
     fog: '#0a0a0b',
   },
+  ledger: {
+    id: 'ledger',
+    name: 'Ledger',
+    blurb: 'Emerald on deep pine. Habits that compound.',
+    free: true,
+    swatch: '#34d399',
+    palette: {
+      ground: '#1b4332',
+      groundHi: '#2d6a4f',
+      foliage: '#34d399',
+      trunk: '#28503f',
+      rock: '#12291f',
+      accent: '#34d399',
+      particle: '#a7f3d0',
+    },
+    material: { flatShading: true, wireframe: false, metalness: 0.1, roughness: 0.85 },
+    fog: '#050b08',
+  },
   wireframe: {
     id: 'wireframe',
     name: 'Wireframe',
@@ -91,9 +109,9 @@ const SkinContext = createContext(null)
 
 export function SkinProvider({ children }) {
   const { profile, premium, setProfile } = useStore()
-  // Non-premium users are locked to the free skin.
-  const effectiveId = premium ? profile.skin || 'normal' : 'normal'
-  const def = SKINS[effectiveId] || SKINS.normal
+  // Non-premium users can still use any free skin; paid skins need premium.
+  const requested = SKINS[profile.skin || 'normal'] || SKINS.normal
+  const def = premium || requested.free ? requested : SKINS.normal
 
   useEffect(() => {
     document.documentElement.dataset.skin = def.id

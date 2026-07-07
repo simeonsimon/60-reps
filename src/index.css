@@ -19,6 +19,15 @@
   --c-accent: 122 162 255;   /* vivid periwinkle */
 }
 
+[data-skin='ledger'] {
+  --c-base: 7 13 11;         /* deep pine black */
+  --c-surface: 16 26 22;
+  --c-elevated: 24 38 32;
+  --c-ink: 232 246 239;
+  --c-muted: 134 160 148;
+  --c-accent: 52 211 153;    /* emerald */
+}
+
 [data-skin='wireframe'] {
   --c-base: 6 8 10;
   --c-surface: 14 18 22;
