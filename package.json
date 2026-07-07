@@ -1,7 +1,7 @@
 {
   "name": "60-reps",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "description": "60 Reps — a no-guilt, 3D habit builder. Build the climb, one rep at a time.",
   "scripts": {

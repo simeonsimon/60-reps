@@ -4,6 +4,8 @@ const DAY = 86400000
 const WEEKS = 17
 const CELL = 13
 const GAP = 3
+const LEFT = 16 // gutter for weekday letters
+const TOP = 13 // gutter for month labels
 
 // GitHub-style contribution calendar built from completion events.
 // `isScheduled(dateMs)` (optional) marks which days the habit runs on; empty
@@ -28,11 +30,32 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
     const col = Math.floor(i / 7)
     const row = i % 7
     const count = counts[date] || 0
-    cells.push({ x: col * (CELL + GAP), y: row * (CELL + GAP), count, date })
+    cells.push({ x: LEFT + col * (CELL + GAP), y: TOP + row * (CELL + GAP), count, date })
   }
 
-  const w = WEEKS * (CELL + GAP)
-  const h = 7 * (CELL + GAP)
+  // Month labels: mark each column where the month changes (keep 3+ columns
+  // of spacing so labels never collide).
+  const monthLabels = []
+  let prevMonth = -1
+  let lastLabelCol = -10
+  for (let col = 0; col < WEEKS; col++) {
+    const d = new Date(start + col * 7 * DAY)
+    const m = d.getMonth()
+    if (m !== prevMonth) {
+      if (col - lastLabelCol >= 3) {
+        monthLabels.push({
+          x: LEFT + col * (CELL + GAP),
+          text: d.toLocaleDateString(undefined, { month: 'short' }),
+        })
+        lastLabelCol = col
+      }
+      prevMonth = m
+    }
+  }
+
+  const activeDays = cells.filter((c) => c.count > 0).length
+  const w = LEFT + WEEKS * (CELL + GAP)
+  const h = TOP + 7 * (CELL + GAP)
 
   const fillFor = (count, date) => {
     if (count <= 0) {
@@ -46,6 +69,26 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
   return (
     <div className="w-full">
       <svg viewBox={`0 0 ${w} ${h}`} width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Consistency heatmap">
+        {monthLabels.map((m) => (
+          <text key={m.x} x={m.x} y={9} fontSize="8.5" fill="rgb(var(--c-muted))">
+            {m.text}
+          </text>
+        ))}
+        {[
+          { row: 1, label: 'M' },
+          { row: 3, label: 'W' },
+          { row: 5, label: 'F' },
+        ].map((r) => (
+          <text
+            key={r.label}
+            x={0}
+            y={TOP + r.row * (CELL + GAP) + CELL - 3}
+            fontSize="8.5"
+            fill="rgb(var(--c-muted))"
+          >
+            {r.label}
+          </text>
+        ))}
         {cells.map((c) => (
           <rect
             key={c.date}
@@ -60,7 +103,8 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
           </rect>
         ))}
       </svg>
-      <div className="mt-2 flex items-center justify-end gap-1.5 text-[10px] text-muted">
+      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted">
+        <span className="mr-auto">{activeDays} active day{activeDays === 1 ? '' : 's'} in 17 weeks</span>
         <span>Less</span>
         {[0, 0.35, 0.6, 1].map((f) => (
           <span

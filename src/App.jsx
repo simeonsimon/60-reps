@@ -172,7 +172,7 @@ export default function App() {
       <Sheet open={sheet === 'quest'} onClose={() => setSheet(null)} title="Quest Book">
         <QuestPanel habit={active} />
       </Sheet>
-      <Sheet open={sheet === 'stats'} onClose={() => setSheet(null)} title="Recaps">
+      <Sheet open={sheet === 'stats'} onClose={() => setSheet(null)} title="Analytics">
         <AnalyticsPanel habit={active} />
       </Sheet>
       <Sheet open={sheet === 'trophies'} onClose={() => setSheet(null)} title="Achievements">

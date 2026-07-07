@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
 
 // Canvas line chart of cumulative ("lifetime") reps over time — the climb.
-export default function ClimbChart({ events = [], accent = '#7aa2ff', height = 170 }) {
+// When `goal` is set and the climb is far enough along (≥30%), the y-scale
+// stretches to the goal and a dashed summit line shows how much is left.
+export default function ClimbChart({ events = [], accent = '#7aa2ff', height = 170, goal = null }) {
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
 
@@ -26,7 +28,7 @@ export default function ClimbChart({ events = [], accent = '#7aa2ff', height = 1
       const padL = 6
       const padR = 6
       const padT = 14
-      const padB = 16
+      const padB = 26
 
       if (!events.length) {
         ctx.fillStyle = muted
@@ -45,7 +47,8 @@ export default function ClimbChart({ events = [], accent = '#7aa2ff', height = 1
       }
       const t0 = pts[0].t
       const t1 = Math.max(pts[pts.length - 1].t, Date.now())
-      const maxY = Math.max(1, cum)
+      const showGoal = goal && cum >= goal * 0.3
+      const maxY = Math.max(1, showGoal ? Math.max(cum, goal) : cum)
       const xOf = (t) => padL + (W - padL - padR) * ((t - t0) / Math.max(1, t1 - t0))
       const yOf = (v) => H - padB - (H - padT - padB) * (v / maxY)
 
@@ -89,19 +92,46 @@ export default function ClimbChart({ events = [], accent = '#7aa2ff', height = 1
       ctx.lineJoin = 'round'
       ctx.stroke()
 
+      // Dashed summit line — the 60-rep finish this climb is heading for.
+      if (showGoal && goal <= maxY) {
+        const gy = yOf(goal)
+        ctx.save()
+        ctx.setLineDash([5, 5])
+        ctx.strokeStyle = hexToRgba(accent, 0.5)
+        ctx.lineWidth = 1.5
+        ctx.beginPath()
+        ctx.moveTo(padL, gy)
+        ctx.lineTo(W - padR, gy)
+        ctx.stroke()
+        ctx.restore()
+        ctx.fillStyle = hexToRgba(accent, 0.9)
+        ctx.font = '600 10px Inter, sans-serif'
+        ctx.textAlign = 'right'
+        ctx.fillText(`${goal} · summit`, W - padR - 2, gy - 4)
+      }
+
       // End dot
       const last = pts[pts.length - 1]
       ctx.beginPath()
       ctx.arc(xOf(last.t), yOf(last.y), 4, 0, Math.PI * 2)
       ctx.fillStyle = accent
       ctx.fill()
+
+      // Date axis: where the climb started → today.
+      const fmt = (t) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      ctx.fillStyle = muted
+      ctx.font = '10px Inter, sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillText(fmt(t0), padL + 2, H - 6)
+      ctx.textAlign = 'right'
+      ctx.fillText('today', W - padR - 2, H - 6)
     }
 
     draw()
     const ro = new ResizeObserver(draw)
     ro.observe(wrap)
     return () => ro.disconnect()
-  }, [events, accent, height])
+  }, [events, accent, height, goal])
 
   return (
     <div ref={wrapRef} className="w-full">
