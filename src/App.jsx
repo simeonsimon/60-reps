@@ -10,6 +10,7 @@ import QuestPanel from './components/QuestPanel.jsx'
 import AchievementsPanel from './components/AchievementsPanel.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import AddHabitPanel from './components/AddHabitPanel.jsx'
+import ImportPanel from './components/ImportPanel.jsx'
 import { ACHIEVEMENT_MAP } from './achievements/achievements.js'
 import {
   BookIcon,
@@ -43,6 +44,15 @@ export default function App() {
     audio.setEnabled(!!profile.sound)
   }, [profile.sound])
 
+  // Dismiss the inline boot screen (index.html) once the app has painted.
+  useEffect(() => {
+    const boot = document.getElementById('boot')
+    if (!boot) return
+    boot.classList.add('boot-done')
+    const t = setTimeout(() => boot.remove(), 450)
+    return () => clearTimeout(t)
+  }, [])
+
   const index = Math.min(activeIndex, Math.max(0, habits.length - 1))
   const active = habits[index]
 
@@ -51,7 +61,7 @@ export default function App() {
       const a = ACHIEVEMENT_MAP[id]
       if (!a) return
       const tid = Math.random().toString(36).slice(2)
-      setToasts((x) => [...x, { id: tid, name: a.name }])
+      setToasts((x) => [...x, { id: tid, name: `${a.name} unlocked`, icon: '🏅' }])
       setTimeout(() => setToasts((x) => x.filter((z) => z.id !== tid)), 3200)
     })
   }
@@ -99,7 +109,7 @@ export default function App() {
               exit={{ opacity: 0, y: -8 }}
               className="flex items-center gap-2 rounded-full bg-surface/90 px-4 py-2 text-sm font-medium text-ink shadow-card backdrop-blur"
             >
-              <span className="text-accent">🏅</span> {t.name} unlocked
+              <span className="text-accent">{t.icon || '🏅'}</span> {t.name}
             </motion.div>
           ))}
         </AnimatePresence>
@@ -111,14 +121,26 @@ export default function App() {
           <HabitCarousel onUnlock={handleUnlock} paused={sheet !== null} />
         ) : (
           <div className="grid h-full place-items-center px-8 text-center">
-            <div>
-              <p className="text-muted">No habits yet.</p>
+            <div className="flex flex-col items-center">
+              <span className="text-accent/80">
+                <MountainIcon width={44} height={44} />
+              </span>
+              <h2 className="mt-4 font-display text-xl font-extrabold text-ink">Every summit starts flat</h2>
+              <p className="mt-1.5 max-w-[26ch] text-sm text-muted">
+                Pick one thing worth 60 reps. Missed days pause the climb — they never reset it.
+              </p>
               <button
                 onClick={() => setSheet('add')}
-                className="mt-4 rounded-full bg-accent px-6 py-2.5 text-sm font-bold"
+                className="mt-6 rounded-full bg-accent px-7 py-3 text-sm font-bold shadow-glow transition-transform active:scale-95"
                 style={{ color: 'rgb(var(--c-base))' }}
               >
-                Add your first
+                Start your first climb
+              </button>
+              <button
+                onClick={() => setSheet('import')}
+                className="mt-3 text-xs font-medium text-muted underline underline-offset-2"
+              >
+                Import from Apple Reminders
               </button>
             </div>
           </div>
@@ -182,7 +204,19 @@ export default function App() {
         <SettingsPanel />
       </Sheet>
       <Sheet open={sheet === 'add'} onClose={() => setSheet(null)} title="New Habit">
-        <AddHabitPanel onClose={() => setSheet(null)} />
+        <AddHabitPanel onClose={() => setSheet(null)} onImport={() => setSheet('import')} />
+      </Sheet>
+      <Sheet open={sheet === 'import'} onClose={() => setSheet(null)} title="Import Reminders">
+        <ImportPanel
+          onClose={(added) => {
+            setSheet(null)
+            if (added > 0) {
+              const tid = Math.random().toString(36).slice(2)
+              setToasts((x) => [...x, { id: tid, name: `${added} habit${added === 1 ? '' : 's'} imported`, icon: '⛰️' }])
+              setTimeout(() => setToasts((x) => x.filter((z) => z.id !== tid)), 3200)
+            }
+          }}
+        />
       </Sheet>
     </div>
   )

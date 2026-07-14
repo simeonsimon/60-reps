@@ -20,7 +20,7 @@ function Label({ children }) {
   return <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted">{children}</label>
 }
 
-export default function AddHabitPanel({ onClose }) {
+export default function AddHabitPanel({ onClose, onImport }) {
   const { addHabit, habits } = useStore()
   const [template, setTemplate] = useState(null)
   const [title, setTitle] = useState('')
@@ -104,6 +104,15 @@ export default function AddHabitPanel({ onClose }) {
               <span>{t.emoji}</span> {t.title}
             </button>
           ))}
+          {onImport && (
+            <button
+              type="button"
+              onClick={onImport}
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-white/15 px-3 py-2 text-sm font-medium text-muted transition-colors active:border-accent active:text-ink"
+            >
+              <span>📷</span> Import from Reminders
+            </button>
+          )}
         </div>
       </div>
 

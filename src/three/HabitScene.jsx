@@ -93,6 +93,8 @@ function HabitScene({ habit, def, progressRef, burst = 0, active = true, paused 
       // Stop rendering entirely while a sheet covers the scene or the card is
       // off-screen; rAF also pauses automatically when the app is backgrounded.
       frameloop={active && !paused ? 'always' : 'demand'}
+      // Soft entrance so the diorama doesn't pop in after the boot screen.
+      className="animate-fade-up"
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
     >

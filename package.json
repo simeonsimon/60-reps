@@ -1,7 +1,7 @@
 {
   "name": "60-reps",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "description": "60 Reps — a no-guilt, 3D habit builder. Build the climb, one rep at a time.",
   "scripts": {
@@ -17,6 +17,7 @@
     "framer-motion": "^11.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tesseract.js": "^7.0.0",
     "three": "^0.169.0",
     "web-push": "^3.6.7"
   },
@@ -28,5 +29,9 @@
     "tailwindcss": "^3.4.0",
     "vite": "^5.4.0",
     "vite-plugin-pwa": "^1.3.0"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true,
+    "sharp@0.35.3": true
   }
 }
