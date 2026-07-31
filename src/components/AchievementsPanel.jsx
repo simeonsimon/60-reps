@@ -1,4 +1,4 @@
-import { useStore } from '../store/StoreProvider.jsx'
+import { useProfile } from '../store/StoreProvider.jsx'
 import { ACHIEVEMENTS } from '../achievements/achievements.js'
 
 // Stylized vector badge glyphs.
@@ -27,7 +27,7 @@ function Glyph({ name }) {
 }
 
 export default function AchievementsPanel() {
-  const { profile } = useStore()
+  const { profile } = useProfile()
   const unlockedMap = profile.achievements || {}
   const unlockedCount = ACHIEVEMENTS.filter((a) => unlockedMap[a.id]).length
 

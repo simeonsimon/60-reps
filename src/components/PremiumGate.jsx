@@ -1,8 +1,8 @@
-import { useStore } from '../store/StoreProvider.jsx'
+import { useProfile } from '../store/StoreProvider.jsx'
 
 // Shown in place of a premium feature when the Super! Boring tier is off.
 export default function PremiumGate({ feature, blurb }) {
-  const { setProfile } = useStore()
+  const { setProfile } = useProfile()
   return (
     <div className="rounded-3xl border border-accent/30 bg-accent-soft p-6 text-center">
       <div className="text-3xl">✦</div>

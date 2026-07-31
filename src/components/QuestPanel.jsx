@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useProfile } from '../store/StoreProvider.jsx'
 import { generateQuest, unlockedChapters, nextChapter } from '../quests/questGenerator.js'
 import PremiumGate from './PremiumGate.jsx'
 
 export default function QuestPanel({ habit }) {
-  const { premium } = useStore()
+  const { premium } = useProfile()
   const quest = useMemo(() => (habit ? generateQuest(habit) : null), [habit?.id, habit?.title])
   if (!habit || !quest) return null
 

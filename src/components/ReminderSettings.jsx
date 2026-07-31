@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useHabits, useProfile } from '../store/StoreProvider.jsx'
 import { isIos, isStandalone } from '../lib/device.js'
 import { enablePush, buildSyncPayload, payloadHash, syncIssueUrl, pushSupported } from '../lib/push.js'
 import { daysLabel } from '../lib/habits.js'
@@ -9,7 +9,8 @@ import { daysLabel } from '../lib/habits.js'
 //  2. Enable notifications on this device (one tap, one time)
 //  3. Set times per habit, then sync them to the cloud sender
 export default function ReminderSettings() {
-  const { habits, profile, setProfile, updateHabit } = useStore()
+  const { habits, updateHabit } = useHabits()
+  const { profile, setProfile } = useProfile()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 

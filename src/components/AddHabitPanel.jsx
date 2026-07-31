@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useHabits } from '../store/StoreProvider.jsx'
 import { HABIT_TYPES, WEEKDAY_ORDER, WEEKDAY_SHORT } from '../lib/habits.js'
 import { TEMPLATES } from '../data/templates.js'
 
@@ -21,7 +21,7 @@ function Label({ children }) {
 }
 
 export default function AddHabitPanel({ onClose, onImport }) {
-  const { addHabit, habits } = useStore()
+  const { addHabit, habits } = useHabits()
   const [template, setTemplate] = useState(null)
   const [title, setTitle] = useState('')
   const [type, setType] = useState('single')

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo } from 'react'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useProfile } from '../store/StoreProvider.jsx'
 
 /**
  * Skin definitions. Each carries:
@@ -108,7 +108,7 @@ export const SKIN_LIST = Object.values(SKINS)
 const SkinContext = createContext(null)
 
 export function SkinProvider({ children }) {
-  const { profile, premium, setProfile } = useStore()
+  const { profile, premium, setProfile } = useProfile()
   // Non-premium users can still use any free skin; paid skins need premium.
   const requested = SKINS[profile.skin || 'normal'] || SKINS.normal
   const def = premium || requested.free ? requested : SKINS.normal

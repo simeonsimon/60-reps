@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useHabits } from '../store/StoreProvider.jsx'
 
 // Words that are Reminders UI chrome, not actual reminders (English + Spanish).
 const CHROME = new Set(
@@ -75,7 +75,7 @@ export function parseReminderLines(text) {
 const ACCENT_BTN = 'w-full rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold transition-transform active:scale-[0.98] disabled:opacity-40'
 
 export default function ImportPanel({ onClose }) {
-  const { addHabit, habits } = useStore()
+  const { addHabit, habits } = useHabits()
   const [phase, setPhase] = useState('idle') // idle | reading | review | error
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
