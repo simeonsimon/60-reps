@@ -1,6 +1,7 @@
-import { useStore } from '../store/StoreProvider.jsx'
+import { useProfile } from '../store/StoreProvider.jsx'
 import { useSkin, SKIN_LIST } from '../context/SkinContext.jsx'
 import ReminderSettings from './ReminderSettings.jsx'
+import SyncPanel from './SyncPanel.jsx'
 
 function Toggle({ checked, onChange }) {
   return (
@@ -32,7 +33,7 @@ function Row({ label, hint, children }) {
 }
 
 export default function SettingsPanel() {
-  const { profile, premium, setProfile, reset } = useStore()
+  const { profile, premium, setProfile, reset } = useProfile()
   const { skin, setSkin } = useSkin()
 
   return (
@@ -49,6 +50,12 @@ export default function SettingsPanel() {
       <div>
         <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">Reminders</h4>
         <ReminderSettings />
+      </div>
+
+      {/* Reminders sync + backup */}
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">Sync</h4>
+        <SyncPanel />
       </div>
 
       {/* Skins */}

@@ -3,6 +3,12 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    # Habit data churns constantly (every backup and every Reminders sweep is a
+    # commit). None of it ships to Pages, so it must not trigger a rebuild.
+    paths-ignore:
+      - 'state.json'
+      - 'inbox/**'
+      - 'push/config.json'
   workflow_dispatch:
 
 permissions:

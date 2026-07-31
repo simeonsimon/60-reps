@@ -97,5 +97,6 @@ export function freshProfile() {
     overrideMute: false, // "Super! Boring" override of system mute
     achievements: {}, // { [id]: unlockedAt }
     stats: { totalTaps: 0 },
+    syncedTicks: {}, // { "<YYYY-MM-DD>|<habitId>": ticksApplied } — see lib/remindersSync.js
   }
 }

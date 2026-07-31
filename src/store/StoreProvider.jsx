@@ -1,10 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { loadState, saveState } from './storage.js'
 import { applyCompletion } from '../lib/habits.js'
 import { evaluate, evaluatePassive } from '../achievements/achievements.js'
 import { seedHabits, freshProfile } from '../data/seed.js'
+import { hasToken } from '../lib/github.js'
+import { pullSweeps, pruneSweeps, backupState } from '../lib/syncEngine.js'
 
-const StoreContext = createContext(null)
+// Two scoped contexts instead of one god store: habit consumers (carousel,
+// cards, analytics) must not re-render when only the profile changes, and
+// profile consumers (skins, settings, premium gates) must not re-render on
+// every rep. Actions are stable and ride along in both.
+const HabitsContext = createContext(null)
+const ProfileContext = createContext(null)
 
 function reducer(state, action) {
   switch (action.type) {
@@ -45,6 +52,18 @@ function reducer(state, action) {
         ...state,
         profile: { ...state.profile, stats: { ...state.profile.stats, totalTaps: (state.profile.stats?.totalTaps || 0) + 1 } },
       }
+    case 'APPLY_SWEEP':
+      return {
+        ...state,
+        habits: action.habits,
+        profile: { ...state.profile, syncedTicks: action.syncedTicks },
+      }
+    case 'RESTORE':
+      return {
+        habits: action.state.habits,
+        profile: { ...freshProfile(), ...action.state.profile },
+        activeIndex: 0,
+      }
     case 'RESET':
       return { habits: seedHabits(), profile: freshProfile(), activeIndex: 0 }
     default:
@@ -69,6 +88,59 @@ export function StoreProvider({ children }) {
     if (ids.length) dispatch({ type: 'UNLOCK', ids, now: Date.now() })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Apple Reminders sync ──────────────────────────────────────────────────
+  const [sync, setSync] = useState({ status: hasToken() ? 'idle' : 'off', message: '', unmatched: [], at: null })
+
+  const syncNow = useCallback(async () => {
+    if (!hasToken()) {
+      setSync({ status: 'off', message: 'Add a GitHub token below to turn sync on.', unmatched: [], at: null })
+      return
+    }
+    setSync((s) => ({ ...s, status: 'syncing', message: '' }))
+    try {
+      const result = await pullSweeps(stateRef.current)
+      const ticks = result?.appliedTicks || 0
+      if (result && (ticks > 0 || JSON.stringify(result.syncedTicks) !== JSON.stringify(stateRef.current.profile.syncedTicks || {}))) {
+        dispatch({ type: 'APPLY_SWEEP', habits: result.habits, syncedTicks: result.syncedTicks })
+      }
+      setSync({
+        status: 'ok',
+        message: ticks ? `Logged ${ticks} tick${ticks === 1 ? '' : 's'} from Reminders.` : 'Up to date.',
+        unmatched: result?.unmatched || [],
+        at: Date.now(),
+      })
+      pruneSweeps().catch(() => {})
+    } catch (err) {
+      setSync({ status: 'error', message: err.message, unmatched: [], at: Date.now() })
+    }
+  }, [])
+
+  // Pull on launch, and again whenever the app comes back to the foreground —
+  // the sweep runs at night, so the ticks are usually waiting the next morning.
+  useEffect(() => {
+    if (!hasToken()) return
+    syncNow()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') syncNow()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [syncNow])
+
+  // Mirror the store to the repo once the tapping stops, so a single rep
+  // doesn't cost a commit of its own.
+  const [backupError, setBackupError] = useState('')
+  useEffect(() => {
+    if (!hasToken()) return
+    const id = setTimeout(() => {
+      backupState(stateRef.current).then(
+        () => setBackupError(''),
+        (err) => setBackupError(err.message),
+      )
+    }, 30000)
+    return () => clearTimeout(id)
+  }, [state])
 
   const actions = useMemo(() => {
     return {
@@ -118,20 +190,56 @@ export function StoreProvider({ children }) {
       reset() {
         dispatch({ type: 'RESET' })
       },
+      restore(next) {
+        dispatch({ type: 'RESTORE', state: next })
+      },
     }
   }, [])
 
+  const habitsValue = useMemo(
+    () => ({
+      habits: state.habits,
+      activeIndex: state.activeIndex,
+      complete: actions.complete,
+      addHabit: actions.addHabit,
+      updateHabit: actions.updateHabit,
+      removeHabit: actions.removeHabit,
+      setActive: actions.setActive,
+    }),
+    [state.habits, state.activeIndex, actions],
+  )
+
   // Expose `premium` at the top level for convenience — consumers (SkinContext,
   // SettingsPanel, QuestPanel) gate features on it. It lives in profile.premium.
-  const value = useMemo(
-    () => ({ ...state, premium: !!state.profile?.premium, ...actions }),
-    [state, actions],
+  const profileValue = useMemo(
+    () => ({
+      profile: state.profile,
+      premium: !!state.profile?.premium,
+      setProfile: actions.setProfile,
+      reset: actions.reset,
+      restore: actions.restore,
+      sync,
+      syncNow,
+      backupError,
+    }),
+    [state.profile, actions, sync, syncNow, backupError],
   )
-  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+
+  return (
+    <HabitsContext.Provider value={habitsValue}>
+      <ProfileContext.Provider value={profileValue}>{children}</ProfileContext.Provider>
+    </HabitsContext.Provider>
+  )
 }
 
-export function useStore() {
-  const ctx = useContext(StoreContext)
-  if (!ctx) throw new Error('useStore must be used within StoreProvider')
+export function useHabits() {
+  const ctx = useContext(HabitsContext)
+  if (!ctx) throw new Error('useHabits must be used within StoreProvider')
+  return ctx
+}
+
+export function useProfile() {
+  const ctx = useContext(ProfileContext)
+  if (!ctx) throw new Error('useProfile must be used within StoreProvider')
   return ctx
 }

@@ -35,6 +35,18 @@ works from any URL — including a GitHub Pages project page.
 
 No routing config needed — it's a single-page app with no server-side routes.
 
+## Logging from Apple Reminders
+
+Habits can be ticked in the iPhone Reminders app instead of here. A nightly
+Shortcut sweeps completed reminders into this repo and the app folds them in on
+launch — which also gets your history out of `localStorage` and into a
+versioned backup. Setup steps and the design constraints behind them are in
+[docs/reminders-sync.md](docs/reminders-sync.md).
+
+```bash
+npm test      # merge-logic tests (idempotency, backfill dates, title matching)
+```
+
 ## What's inside (per the spec)
 
 - **60-rep philosophy** — progress is out of 60; missed days pause, never reset.
