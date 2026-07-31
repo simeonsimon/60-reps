@@ -1,10 +1,9 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStore } from '../store/StoreProvider.jsx'
-import { useSkin } from '../context/SkinContext.jsx'
+import { useHabits } from '../store/StoreProvider.jsx'
 import { audio } from '../audio/AudioEngine.js'
 import { useLongPress } from '../hooks/useLongPress.js'
-import HabitScene from '../three/HabitScene.jsx'
+import ChargeStage from './ChargeStage.jsx'
 import ProgressRing from './ProgressRing.jsx'
 import { FlameIcon, TrashIcon } from './icons.jsx'
 import {
@@ -18,15 +17,14 @@ import {
   daysLabel,
 } from '../lib/habits.js'
 
-export default function HabitCard({ habit, active, onUnlock, paused = false }) {
-  const { complete, removeHabit, habits, setActive } = useStore()
-  const { def } = useSkin()
+export default function HabitCard({ habit, active, onUnlock }) {
+  const { complete, removeHabit, habits, setActive } = useHabits()
   const progressRef = useRef(0)
-  // The ascent bar and its label are mutated directly (no state) so the hold
-  // gesture never re-renders the card mid-frame — key for smooth iOS holds.
-  const holdBarRef = useRef(null)
-  const holdLabelRef = useRef(null)
-  const [burst, setBurst] = useState(0)
+  // The stage and the info panel are painted by mutating style through refs, so
+  // the hold gesture never re-renders the card mid-frame — key for smooth iOS
+  // holds, and the reason the charge visuals can run at full frame rate.
+  const stageRef = useRef(null)
+  const panelRef = useRef(null)
   const [shake, setShake] = useState(false)
   const lastTick = useRef(0)
   const startPt = useRef({ x: 0, y: 0 })
@@ -40,14 +38,28 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
 
   function paintHold(p) {
     progressRef.current = p
-    if (holdBarRef.current) holdBarRef.current.style.transform = `scaleX(${p})`
-    if (holdLabelRef.current) {
-      holdLabelRef.current.textContent = p > 0.85 ? 'Send it!' : p > 0.45 ? 'Climb…' : 'Grip…'
+    stageRef.current?.paint(p)
+    // Focus pull: the info panel recedes while you charge, so the surface under
+    // your thumb becomes the only thing in the room. Compositor-only — no blur,
+    // which would cost too much stacked on the panel's existing backdrop.
+    if (panelRef.current) {
+      panelRef.current.style.transform = `scale(${1 - p * 0.02}) translateY(${p * 5}px)`
+      panelRef.current.style.opacity = String(1 - p * 0.3)
+    }
+  }
+
+  function settleHold() {
+    progressRef.current = 0
+    stageRef.current?.rest()
+    if (panelRef.current) {
+      panelRef.current.style.transition = 'transform 320ms var(--ease-out-quart), opacity 320ms var(--ease-out-quart)'
+      panelRef.current.style.transform = 'scale(1) translateY(0)'
+      panelRef.current.style.opacity = '1'
     }
   }
 
   function handleComplete() {
-    paintHold(0)
+    settleHold()
     const prevReps = habit.reps
     const res = complete(habit.id)
     if (res.meta.blocked) {
@@ -57,7 +69,7 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
       return
     }
     if (res.meta.repsGained > 0) {
-      setBurst((b) => b + 1)
+      stageRef.current?.fire()
       if (prevReps < GOAL && prevReps + res.meta.repsGained >= GOAL) audio.summit()
       else audio.complete()
     } else {
@@ -99,11 +111,15 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
       }
     },
     onComplete: handleComplete,
-    onCancel: () => paintHold(0),
+    onCancel: settleHold,
   })
 
   const onPointerDown = (e) => {
     startPt.current = { x: e.clientX, y: e.clientY }
+    // Anchor the charge to the finger before the first frame paints.
+    stageRef.current?.origin(e.clientX, e.clientY)
+    stageRef.current?.arm()
+    if (panelRef.current) panelRef.current.style.transition = 'none'
     handlers.onPointerDown(e)
   }
   const onPointerMove = (e) => {
@@ -112,7 +128,7 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
     const dy = e.clientY - startPt.current.y
     if (Math.hypot(dx, dy) > 14) {
       cancel() // a swipe, not a hold — let the carousel take it
-      paintHold(0)
+      settleHold()
     }
   }
 
@@ -125,18 +141,9 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
       animate={shake ? { x: [0, -8, 8, -5, 5, 0] } : { x: 0 }}
       transition={{ duration: 0.42 }}
     >
-      {/* ── Hero 3D viewport (the completion surface) ───────────────────── */}
+      {/* ── The completion surface ──────────────────────────────────────── */}
       <div className="relative min-h-0 flex-1">
-        {active ? (
-          <HabitScene habit={habit} def={def} progressRef={progressRef} burst={burst} active={active} paused={paused} />
-        ) : (
-          // Off-screen cards skip the WebGL context entirely (keeps GPU load
-          // and context count down); a skin-tinted gradient stands in.
-          <div
-            className="absolute inset-0"
-            style={{ background: 'radial-gradient(80% 60% at 50% 40%, rgb(var(--c-accent) / 0.12), rgb(var(--c-base)))' }}
-          />
-        )}
+        <ChargeStage ref={stageRef} />
 
         {/* Emoji + type badge, floating top-left (clears the app header) */}
         <div
@@ -183,37 +190,15 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
           onPointerLeave={handlers.onPointerLeave}
           onPointerCancel={handlers.onPointerCancel}
         >
-          {/* Ascent bar — sits at the bottom of the scene, clear of the finger.
-              Fill and label are mutated via refs (compositor-only scaleX), so
-              the hold stays smooth even alongside the WebGL scene on iPhone. */}
-          <div
-            className="pointer-events-none absolute inset-x-6 bottom-4 transition-opacity duration-150"
-            style={{ opacity: holding ? 1 : 0 }}
-          >
-            <div
-              ref={holdLabelRef}
-              className="mb-2 text-center text-sm font-bold tracking-wide text-accent"
-              style={{ textShadow: '0 1px 8px rgb(0 0 0 / 0.6)' }}
-            >
-              Grip…
-            </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-surface/70 backdrop-blur">
-              <div
-                ref={holdBarRef}
-                className="h-full w-full origin-left rounded-full bg-accent"
-                style={{ transform: 'scaleX(0)' }}
-              />
-            </div>
-          </div>
-
-          {/* Idle hint */}
+          {/* Idle hint. Progress feedback now lives on the stage, under the
+              thumb — this is only the resting invitation. */}
           <AnimatePresence>
             {!holding && (
               <motion.div
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="pointer-events-none absolute bottom-4 rounded-full bg-surface/60 px-4 py-2 text-xs font-medium text-muted backdrop-blur"
+                className="breathe pointer-events-none absolute bottom-4 rounded-full bg-surface/60 px-4 py-2 text-xs font-medium text-muted backdrop-blur"
               >
                 {doneToday
                   ? 'Logged today ✓ — see you tomorrow'
@@ -230,7 +215,10 @@ export default function HabitCard({ habit, active, onUnlock, paused = false }) {
       </div>
 
       {/* ── Info panel ──────────────────────────────────────────────────── */}
-      <div className="relative z-10 mx-3 mb-3 rounded-4xl border border-white/5 bg-surface/80 p-5 shadow-card backdrop-blur-xl">
+      <div
+        ref={panelRef}
+        className="relative z-10 mx-3 mb-3 origin-bottom rounded-4xl border border-white/5 bg-surface/80 p-5 shadow-card backdrop-blur-xl"
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 className="font-display text-xl font-extrabold leading-tight text-ink">{habit.title}</h2>

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useStore } from '../store/StoreProvider.jsx'
+import { useHabits } from '../store/StoreProvider.jsx'
 import { audio } from '../audio/AudioEngine.js'
 import HabitCard from './HabitCard.jsx'
 
 // Full-viewport horizontal pager. Drag to swipe; snaps to the nearest card on
 // release based on offset/velocity. No navbar — the cards are the interface.
-export default function HabitCarousel({ onUnlock, paused = false }) {
-  const { habits, activeIndex, setActive } = useStore()
+export default function HabitCarousel({ onUnlock }) {
+  const { habits, activeIndex, setActive } = useHabits()
   const containerRef = useRef(null)
   const [width, setWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 0))
 
@@ -50,7 +50,7 @@ export default function HabitCarousel({ onUnlock, paused = false }) {
       >
         {habits.map((h, i) => (
           <div key={h.id} style={{ width: width || '100%' }} className="h-full shrink-0">
-            <HabitCard habit={h} active={i === index} onUnlock={onUnlock} paused={paused} />
+            <HabitCard habit={h} active={i === index} onUnlock={onUnlock} />
           </div>
         ))}
       </motion.div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useStore } from './store/StoreProvider.jsx'
+import { useHabits, useProfile } from './store/StoreProvider.jsx'
 import { useSkin } from './context/SkinContext.jsx'
 import { audio } from './audio/AudioEngine.js'
 import HabitCarousel from './components/HabitCarousel.jsx'
@@ -34,7 +34,8 @@ function DockButton({ children, label, onClick }) {
 }
 
 export default function App() {
-  const { habits, activeIndex, profile } = useStore()
+  const { habits, activeIndex } = useHabits()
+  const { profile } = useProfile()
   const { def } = useSkin()
   const [sheet, setSheet] = useState(null)
   const [toasts, setToasts] = useState([])
@@ -118,7 +119,7 @@ export default function App() {
       {/* Main pager */}
       <main className="relative min-h-0 flex-1">
         {habits.length > 0 ? (
-          <HabitCarousel onUnlock={handleUnlock} paused={sheet !== null} />
+          <HabitCarousel onUnlock={handleUnlock} />
         ) : (
           <div className="grid h-full place-items-center px-8 text-center">
             <div className="flex flex-col items-center">
