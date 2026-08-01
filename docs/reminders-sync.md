@@ -89,7 +89,25 @@ finished shortcut is one list:
 ```
 
 **8. `Find Reminders`** — tap **Filter** and add three:
-`List` **is** `Habits` · `Is Completed` **is** `Yes` · `Due Date` **is today**
+
+- `List` **is** `Habits`
+- `Is Completed` **is** `Yes`
+- a date filter **is today** — see which one your version offers:
+
+| Filter | Meaning | Use it? |
+|---|---|---|
+| `Completion Date` | when you ticked it | **prefer this** |
+| `Due Date` / `Deadline` / `Date` | when it was scheduled | fine, use if the above is missing |
+
+`Due Date`, `Deadline` and `Date` are one and the same — a reminder has a single
+scheduled date, and iOS versions and localizations just label it differently.
+Take whichever of those three your filter list shows.
+
+`Completion Date` is a genuinely different field, and the better one: tick a
+Monday reminder on Tuesday and a scheduled-date filter files that rep under
+Monday, the wrong day for your streak, while completion date files it under
+Tuesday, when you actually did it. Use it if it's offered. Everything
+downstream works the same either way.
 
 **9. `Count`** — counting `Reminders`, the output of 8.
 
@@ -130,11 +148,11 @@ under `inbox/` in the repo. Open the app and the ticks should appear.
 
 #### The YESTERDAY block is optional
 
-Actions 16–23 repeat 8–15 with `Due Date` set to yesterday and `YESTERDAY` in
+Actions 16–23 repeat 8–15 with the date filter set to yesterday and `YESTERDAY` in
 the URL. It exists only to catch ticks made between 23:50 and midnight, or a
 night the automation didn't fire.
 
-Check what your version's `Due Date` filter actually offers. If there's a
+Check what your version's date filter actually offers. If there is a
 **Yesterday** option, build it. If there isn't, **skip it** — the cost is a
 ten-minute window per day, and the Home Screen widget lets you force a sweep
 whenever you want.
