@@ -48,45 +48,72 @@ You'll paste the same token into the Shortcut below.
 New shortcut named **Sweep habits**. It does the same six steps twice — once
 for today, once for yesterday.
 
-**Set up the two dates first:**
+**Set up the three dates first.** Each one is a pair of actions: format the
+date, then store it under a name you can reuse.
 
-| Action | Settings |
-|---|---|
-| `Format Date` | Date: **Current Date**, Format: Custom → `yyyy-MM-dd` → rename variable **TODAY** |
-| `Adjust Date` | **Current Date**, Subtract **1 Day** |
-| `Format Date` | Date: the adjusted date, Custom → `yyyy-MM-dd` → rename **YESTERDAY** |
-| `Format Date` | Date: **Current Date**, Custom → `yyyyMMddHHmmss` → rename **RUNSTAMP** |
+> **Naming variables.** Shortcuts won't let you name an action's output from the
+> action itself — a magic variable can only be renamed from somewhere it's
+> already *used* (tap the blue pill → **Variable Name**). Since nothing
+> references these dates yet, use a **Set Variable** action instead: add it,
+> tap the name field, type the name. Its input defaults to the previous
+> action's output, which is exactly what you want.
+
+| # | Action | Settings |
+|---|---|---|
+| 1 | `Format Date` | Date: **Current Date** · Format: **Custom** → `yyyy-MM-dd` |
+| 2 | `Set Variable` | Name: `TODAY` (input: the Formatted Date above) |
+| 3 | `Adjust Date` | **Current Date** · **Subtract** · **1** · **Day** |
+| 4 | `Format Date` | Date: the **Adjusted Date** from step 3 · Custom → `yyyy-MM-dd` |
+| 5 | `Set Variable` | Name: `YESTERDAY` |
+| 6 | `Format Date` | Date: **Current Date** · Custom → `yyyyMMddHHmmss` |
+| 7 | `Set Variable` | Name: `RUNSTAMP` |
+
+To set **Custom** format: tap the `Format Date` action, set *Date Format* to
+**Custom**, then type the pattern into the *Format String* field that appears.
 
 `RUNSTAMP` is what keeps each night's file unique. Without it, tonight's sweep
 of yesterday would collide with last night's sweep of the same day and the
 upload would fail.
 
-**Then, for each of TODAY and YESTERDAY:**
+Everywhere below that names a variable in caps, insert it from the variable
+row above the keyboard (or the **Select Variable** button) — don't type the
+word literally, or you'll upload a file called `TODAY--RUNSTAMP.txt`.
 
-1. **`Find Reminders`** — Filter: `List` is `Habits`, `Is Completed` is `Yes`,
-   `Due Date` is **Today** (or **Yesterday** for the second pass).
-2. **`Count`** the result → **`If` `Count` is greater than `0`** — skip the
-   upload on a day where you ticked nothing, so the automation can't error out.
-3. **`Combine Text`** on the found reminders, Separator: **New Lines**. A
-   reminder coerces to its title, so this gives you one title per line, repeated
-   if you ticked it more than once.
-4. **`Base64 Encode`** that text. Expand the action and set
-   **Line Breaks: None** — wrapped Base64 is rejected by the API.
-5. **`Text`** action holding the request body. Build it as *Text*, not as a
-   `Dictionary` — the dictionary action chokes on larger payloads:
-   ```
-   {"message":"sweep","content":"BASE64","branch":"main"}
-   ```
-   with `BASE64` replaced by the variable from step 4.
-6. **`Get Contents of URL`**
-   - URL: `https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/TODAY--RUNSTAMP.txt`
-     (variables inline; use `YESTERDAY` on the second pass)
-   - Method: **PUT**
-   - Headers:
-     - `Authorization` → `Bearer <your token>`
-     - `Accept` → `application/vnd.github+json`
-     - `X-GitHub-Api-Version` → `2022-11-28`
-   - Request Body: **File** → the Text from step 5
+**Then add this block twice** — once for today, once for yesterday. Build it
+for today first, get it working, then duplicate and change the two marked
+settings.
+
+- **A. `Find Reminders`** — Filter: `List` is `Habits`, `Is Completed` is `Yes`,
+  `Due Date` is **Today**. ← *second pass: **Yesterday***
+- **B. `Count`** → **`If`** `Count` is **greater than** `0`. Everything from C
+  to F goes *inside* the If, so a day where you ticked nothing can't error the
+  automation out.
+- **C. `Combine Text`** on the found reminders, Separator: **New Lines**. A
+  reminder coerces to its title, so this gives one title per line, repeated if
+  you ticked it more than once.
+- **D. `Base64 Encode`** the Combined Text. Tap the arrow to expand the action
+  and set **Line Breaks: None** — wrapped Base64 is rejected by the API.
+- **E. `Text`** action holding the request body. Build it as *Text*, not as a
+  `Dictionary` — the dictionary action chokes on larger payloads:
+  ```
+  {"message":"sweep","content":"BASE64","branch":"main"}
+  ```
+  where `BASE64` is the Base64 Encoded Text from D, inserted as a variable.
+- **F. `Get Contents of URL`**
+  - URL — insert `TODAY` and `RUNSTAMP` as variables, type the rest:
+    ```
+    https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/TODAY--RUNSTAMP.txt
+    ```
+    ← *second pass: swap `TODAY` for `YESTERDAY`*
+  - Method: **PUT**
+  - Headers:
+    - `Authorization` → `Bearer <your token>`
+    - `Accept` → `application/vnd.github+json`
+    - `X-GitHub-Api-Version` → `2022-11-28`
+  - Request Body: **File** → the Text from E
+
+Tap ▶︎ to run it by hand once. A green result and a new file under `inbox/` in
+the repo means it works; open the app and the ticks should appear.
 
 ### 4. The nightly automation
 
@@ -133,3 +160,6 @@ npm test
 | A reminder is listed as unmatched | Reminder title doesn't match any habit title |
 | Nothing syncs at all | The automation has *Ask Before Running* on, or the list isn't named `Habits` |
 | Upload fails at 23:50 | Base64 Encode has line breaks on, or the body was built with `Dictionary` instead of `Text` |
+| Can't find a way to name a variable | You can't name an action's output from the action — add a `Set Variable` action after it (see the note in step 3) |
+| A file called `TODAY--RUNSTAMP.txt` appears | The variable names were typed as text instead of inserted as variables |
+| 422 from GitHub | Two runs produced the same filename — `RUNSTAMP` is missing or not `yyyyMMddHHmmss` |
