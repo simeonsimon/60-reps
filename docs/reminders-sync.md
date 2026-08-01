@@ -45,8 +45,8 @@ You'll paste the same token into the Shortcut below.
 
 ### 3. The Shortcut
 
-New shortcut named **Sweep habits**. It does the same six steps twice — once
-for today, once for yesterday.
+One shortcut named **Sweep habits**: some date setup, then a sweep block for
+today, and optionally the same block again for yesterday.
 
 **Set up the three dates first.** Each one is a pair of actions: format the
 date, then store it under a name you can reuse.
@@ -79,41 +79,71 @@ Everywhere below that names a variable in caps, insert it from the variable
 row above the keyboard (or the **Select Variable** button) — don't type the
 word literally, or you'll upload a file called `TODAY--RUNSTAMP.txt`.
 
-**Then add this block twice** — once for today, once for yesterday. Build it
-for today first, get it working, then duplicate and change the two marked
-settings.
+**The sweep block goes in the same shortcut**, below the 7 actions above. The
+finished shortcut is one list:
 
-- **A. `Find Reminders`** — Filter: `List` is `Habits`, `Is Completed` is `Yes`,
-  `Due Date` is **Today**. ← *second pass: **Yesterday***
-- **B. `Count`** → **`If`** `Count` is **greater than** `0`. Everything from C
-  to F goes *inside* the If, so a day where you ticked nothing can't error the
-  automation out.
-- **C. `Combine Text`** on the found reminders, Separator: **New Lines**. A
-  reminder coerces to its title, so this gives one title per line, repeated if
-  you ticked it more than once.
-- **D. `Base64 Encode`** the Combined Text. Tap the arrow to expand the action
-  and set **Line Breaks: None** — wrapped Base64 is rejected by the API.
-- **E. `Text`** action holding the request body. Build it as *Text*, not as a
-  `Dictionary` — the dictionary action chokes on larger payloads:
-  ```
-  {"message":"sweep","content":"BASE64","branch":"main"}
-  ```
-  where `BASE64` is the Base64 Encoded Text from D, inserted as a variable.
-- **F. `Get Contents of URL`**
-  - URL — insert `TODAY` and `RUNSTAMP` as variables, type the rest:
-    ```
-    https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/TODAY--RUNSTAMP.txt
-    ```
-    ← *second pass: swap `TODAY` for `YESTERDAY`*
-  - Method: **PUT**
-  - Headers:
-    - `Authorization` → `Bearer <your token>`
-    - `Accept` → `application/vnd.github+json`
-    - `X-GitHub-Api-Version` → `2022-11-28`
-  - Request Body: **File** → the Text from E
+```
+1–7    date setup (above)
+8–15   the TODAY block
+16–23  the YESTERDAY block  (optional — see below)
+```
 
-Tap ▶︎ to run it by hand once. A green result and a new file under `inbox/` in
-the repo means it works; open the app and the ticks should appear.
+**8. `Find Reminders`** — tap **Filter** and add three:
+`List` **is** `Habits` · `Is Completed` **is** `Yes` · `Due Date` **is today**
+
+**9. `Count`** — counting `Reminders`, the output of 8.
+
+**10. `If`** — `Count` **is greater than** `0`. Actions 11–14 must sit *inside*
+the If, above `End If`; drag them in if they land outside. This is what stops a
+day with nothing ticked from erroring the automation out.
+
+**11. `Combine Text`** — input the **Reminders** from 8, then **tap the variable
+pill and choose `Name`**. Without that you combine reminder objects rather than
+their titles. Separator: **New Lines**. Ticking something twice gives two lines,
+which is what the app counts.
+
+**12. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
+set **Line Breaks: None** — wrapped Base64 is rejected by the API.
+
+**13. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
+dictionary action chokes on larger payloads). Insert the Base64 output where
+marked, keeping the quotes:
+```
+{"message":"sweep","content":"BASE64","branch":"main"}
+```
+
+**14. `Get Contents of URL`**
+- URL — type the text but **insert `TODAY` and `RUNSTAMP` from the variable
+  picker**, don't type their names:
+  ```
+  https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/TODAY--RUNSTAMP.txt
+  ```
+- Method: **PUT**
+- Headers: `Authorization` → `Bearer <token>` · `Accept` →
+  `application/vnd.github+json` · `X-GitHub-Api-Version` → `2022-11-28`
+- Request Body: **File** → the Text from 13
+
+**15. `End If`.**
+
+Tap ▶︎ now. Success is a JSON response mentioning `"content"` plus a new file
+under `inbox/` in the repo. Open the app and the ticks should appear.
+
+#### The YESTERDAY block is optional
+
+Actions 16–23 repeat 8–15 with `Due Date` set to yesterday and `YESTERDAY` in
+the URL. It exists only to catch ticks made between 23:50 and midnight, or a
+night the automation didn't fire.
+
+Check what your version's `Due Date` filter actually offers. If there's a
+**Yesterday** option, build it. If there isn't, **skip it** — the cost is a
+ten-minute window per day, and the Home Screen widget lets you force a sweep
+whenever you want.
+
+> **If you duplicate 8–15 instead of rebuilding, re-check every variable in the
+> copy.** Duplicated actions in Shortcuts frequently keep pointing at the
+> *original* actions' outputs, so the second block would silently upload the
+> first block's reminders under yesterday's filename. Rebuilding from scratch is
+> less error-prone than hunting for that.
 
 ### 4. The nightly automation
 
@@ -126,8 +156,10 @@ a late tick.
 
 ## How it behaves
 
-- **Ticks after 23:50 aren't lost.** Every run re-reports yesterday too, so a
-  reminder ticked at 23:55 lands in the next night's sweep.
+- **Ticks after 23:50** are only caught if you built the optional YESTERDAY
+  block — it re-reports the previous day, so a reminder ticked at 23:55 lands in
+  the next night's sweep. Without it, tick it in the app or run the shortcut
+  from the widget.
 - **Re-running is safe.** Applying a sweep is idempotent: files record how many
   ticks a day had, not "add one more". Running the shortcut five times in a row
   changes nothing.
