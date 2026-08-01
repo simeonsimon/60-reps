@@ -48,8 +48,8 @@ You'll paste the same token into the Shortcut below.
 One shortcut named **Sweep habits**: some date setup, then a sweep block for
 today, and optionally the same block again for yesterday.
 
-**Set up the three dates first.** Each one is a pair of actions: format the
-date, then store it under a name you can reuse.
+**Set up the dates first.** Each is a pair of actions: format the date, then
+store it under a name you can reuse.
 
 > **Naming variables.** Shortcuts won't let you name an action's output from the
 > action itself — a magic variable can only be renamed from somewhere it's
@@ -62,11 +62,21 @@ date, then store it under a name you can reuse.
 |---|---|---|
 | 1 | `Format Date` | Date: **Current Date** · Format: **Custom** → `yyyy-MM-dd` |
 | 2 | `Set Variable` | Name: `TODAY` (input: the Formatted Date above) |
-| 3 | `Adjust Date` | **Current Date** · **Subtract** · **1** · **Day** |
-| 4 | `Format Date` | Date: the **Adjusted Date** from step 3 · Custom → `yyyy-MM-dd` |
-| 5 | `Set Variable` | Name: `YESTERDAY` |
-| 6 | `Format Date` | Date: **Current Date** · Custom → `yyyyMMddHHmmss` |
-| 7 | `Set Variable` | Name: `RUNSTAMP` |
+| 3 | `Format Date` | Date: **Current Date** · Custom → `yyyyMMddHHmmss` |
+| 4 | `Set Variable` | Name: `RUNSTAMP` |
+
+Both `Format Date` actions take **Current Date**. Feeding the second one `TODAY`
+is the obvious-looking shortcut and it's wrong: `TODAY` is already a formatted
+string pinned to midnight, so every run of the day would produce an identical
+`RUNSTAMP`.
+
+Only add these three if you're building the optional YESTERDAY block:
+
+| # | Action | Settings |
+|---|---|---|
+| 5 | `Adjust Date` | **Current Date** · **Subtract** · **1** · **Day** — not `TODAY`, which is a string |
+| 6 | `Format Date` | Date: the **Adjusted Date** · Custom → `yyyy-MM-dd` |
+| 7 | `Set Variable` | Name: `YESTERDAY` |
 
 To set **Custom** format: tap the `Format Date` action, set *Date Format* to
 **Custom**, then type the pattern into the *Format String* field that appears.
@@ -79,16 +89,15 @@ Everywhere below that names a variable in caps, insert it from the variable
 row above the keyboard (or the **Select Variable** button) — don't type the
 word literally, or you'll upload a file called `TODAY--RUNSTAMP.txt`.
 
-**The sweep block goes in the same shortcut**, below the 7 actions above. The
-finished shortcut is one list:
+**The sweep block goes in the same shortcut**, directly below the date setup:
 
 ```
-1–7    date setup (above)
-8–15   the TODAY block
-16–23  the YESTERDAY block  (optional — see below)
+date setup    4 actions  (7 if you build YESTERDAY)
+sweep block   8 actions  — S1 to S8 below
+optional      the same 8 actions again, for yesterday
 ```
 
-**8. `Find Reminders`** — tap **Filter** and add three:
+**S1. `Find Reminders`** — tap **Filter** and add three:
 
 - `List` **is** `Habits`
 - `Is Completed` **is** `Yes`
@@ -109,28 +118,36 @@ Monday, the wrong day for your streak, while completion date files it under
 Tuesday, when you actually did it. Use it if it's offered. Everything
 downstream works the same either way.
 
-**9. `Count`** — counting `Reminders`, the output of 8.
+**S2. `Count`** — counting `Reminders`, the output of S1.
 
-**10. `If`** — `Count` **is greater than** `0`. Actions 11–14 must sit *inside*
+**S3. `If`** — `Count` **is greater than** `0`. Actions S4–S7 must sit *inside*
 the If, above `End If`; drag them in if they land outside. This is what stops a
 day with nothing ticked from erroring the automation out.
 
-**11. `Combine Text`** — input the **Reminders** from 8, then **tap the variable
+**S4. `Combine Text`** — input the **Reminders** from S1, then **tap the variable
 pill and choose `Name`**. Without that you combine reminder objects rather than
 their titles. Separator: **New Lines**. Ticking something twice gives two lines,
 which is what the app counts.
 
-**12. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
+**S5. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
 set **Line Breaks: None** — wrapped Base64 is rejected by the API.
 
-**13. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
-dictionary action chokes on larger payloads). Insert the Base64 output where
-marked, keeping the quotes:
-```
-{"message":"sweep","content":"BASE64","branch":"main"}
-```
+**S6. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
+dictionary action chokes on larger payloads). Type it in this order, so the
+variable lands *inside* the JSON rather than in front of it:
 
-**14. `Get Contents of URL`**
+1. type `{"message": "sweep", "content": "`
+2. insert the **Base64 Encoded** variable
+3. type `", "branch": "main"}`
+
+The finished action holds exactly one pill, sitting between two quote marks:
+```
+{"message": "sweep", "content": «Base64 Encoded», "branch": "main"}
+```
+Turn **Smart Punctuation off** (Settings → General → Keyboard) first, or iOS
+curls the quotes and the JSON is invalid.
+
+**S7. `Get Contents of URL`**
 - URL — type the text but **insert `TODAY` and `RUNSTAMP` from the variable
   picker**, don't type their names:
   ```
@@ -139,16 +156,41 @@ marked, keeping the quotes:
 - Method: **PUT**
 - Headers: `Authorization` → `Bearer <token>` · `Accept` →
   `application/vnd.github+json` · `X-GitHub-Api-Version` → `2022-11-28`
-- Request Body: **File** → the Text from 13
+- Request Body: **File** → the Text from S6
 
-**15. `End If`.**
+**S8. `End If`.**
 
 Tap ▶︎ now. Success is a JSON response mentioning `"content"` plus a new file
 under `inbox/` in the repo. Open the app and the ticks should appear.
 
+#### Mistakes this build actually produced
+
+Every one of these was hit on the first real attempt, and none of them announce
+themselves:
+
+- **The shortcut outputs `0` and nothing uploads.** `Count` was zero, so the
+  `If` skipped everything. The filter matched no reminders — check the list is
+  named exactly `Habits` and that you have actually ticked something today.
+  The app reporting "up to date" is correct in this case, not a failure.
+- **The Base64 pill lands at the front of the Text action** rather than inside
+  the JSON, leaving the literal word `BASE64` in the body. The result is not
+  valid JSON and GitHub answers 400. There must be exactly one pill, sitting
+  between the two quote marks after `"content":`.
+- **Smart punctuation rewrites `"` as `"`**, which also kills the JSON. Turn it
+  off in Settings → General → Keyboard.
+- **`TODAY` and `RUNSTAMP` typed into the URL as words.** They must be inserted
+  as variables; otherwise you upload a file called `TODAY--RUNSTAMP.txt`.
+- **`RUNSTAMP` formatted from `TODAY` or `YESTERDAY`** instead of Current Date.
+  Those are already-formatted *strings* fixed to midnight, so every run of the
+  day produces the same stamp, and the second run collides with a 422. Format
+  it from **Current Date**.
+- **A hardcoded date in the filter.** `Completion Date is on 01/08/2026` works
+  the day you build it and silently sweeps the wrong day forever after. It needs
+  to reference Current Date.
+
 #### The YESTERDAY block is optional
 
-Actions 16–23 repeat 8–15 with the date filter set to yesterday and `YESTERDAY` in
+The optional second block repeats S1–S8 with the date filter set to yesterday and `YESTERDAY` in
 the URL. It exists only to catch ticks made between 23:50 and midnight, or a
 night the automation didn't fire.
 
@@ -157,7 +199,7 @@ Check what your version's date filter actually offers. If there is a
 ten-minute window per day, and the Home Screen widget lets you force a sweep
 whenever you want.
 
-> **If you duplicate 8–15 instead of rebuilding, re-check every variable in the
+> **If you duplicate S1–S8 instead of rebuilding, re-check every variable in the
 > copy.** Duplicated actions in Shortcuts frequently keep pointing at the
 > *original* actions' outputs, so the second block would silently upload the
 > first block's reminders under yesterday's filename. Rebuilding from scratch is
