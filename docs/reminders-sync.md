@@ -93,46 +93,50 @@ word literally, or you'll upload a file called `TODAY--RUNSTAMP.txt`.
 
 ```
 date setup    4 actions  (7 if you build YESTERDAY)
-sweep block   8 actions  — S1 to S8 below
-optional      the same 8 actions again, for yesterday
+sweep block   11 actions — S1 to S11 below
+optional      the same 11 actions again, for yesterday
 ```
 
-**S1. `Find Reminders`** — tap **Filter** and add three:
+**S1. `Find Reminders`** — tap **Filter** and add exactly two:
 
 - `List` **is** `Habits`
 - `Is Completed` **is** `Yes`
-- a date filter **is today** — see which one your version offers:
 
-| Filter | Meaning | Use it? |
-|---|---|---|
-| `Completion Date` | when you ticked it | **prefer this** |
-| `Due Date` / `Deadline` / `Date` | when it was scheduled | fine, use if the above is missing |
+**Do not filter by date here.** The obvious move is a third filter like
+`Completion Date is on <date>`, but Shortcuts only accepts a *literal* date in
+that field — no variables. It would be correct on the day you built it and
+silently sweep the wrong day forever after. The date match happens in S2–S4
+instead, against a `TODAY` that is recomputed every run.
 
-`Due Date`, `Deadline` and `Date` are one and the same — a reminder has a single
-scheduled date, and iOS versions and localizations just label it differently.
-Take whichever of those three your filter list shows.
+**S2. `Repeat with Each`** over the **Reminders** from S1.
 
-`Completion Date` is a genuinely different field, and the better one: tick a
-Monday reminder on Tuesday and a scheduled-date filter files that rep under
-Monday, the wrong day for your streak, while completion date files it under
-Tuesday, when you actually did it. Use it if it's offered. Everything
-downstream works the same either way.
+**S3.** Inside the repeat, **`Format Date`** → tap its input, choose **Repeat
+Item**, then tap that pill and pick the **Completion Date** property. Format:
+Custom → `yyyy-MM-dd`. If your version doesn't offer Completion Date as a
+property, use **Deadline / Due Date** — for daily-repeating habit reminders the
+two fall on the same day.
 
-**S2. `Count`** — counting `Reminders`, the output of S1.
+**S4.** Still inside the repeat: **`If`** `Formatted Date` **is** `TODAY` →
+**`Add to Variable`** named `MATCHED`, value the **Repeat Item ▸ Name**
+property. Then `End If`, `End Repeat`.
 
-**S3. `If`** — `Count` **is greater than** `0`. Actions S4–S7 must sit *inside*
-the If, above `End If`; drag them in if they land outside. This is what stops a
-day with nothing ticked from erroring the automation out.
+Use **`Add to Variable`**, not `Set Variable`. `Set` overwrites on every pass
+and leaves you with only the last match; `Add` appends, building a list.
 
-**S4. `Combine Text`** — input the **Reminders** from S1, then **tap the variable
-pill and choose `Name`**. Without that you combine reminder objects rather than
-their titles. Separator: **New Lines**. Ticking something twice gives two lines,
-which is what the app counts.
+**S5. `Count`** — counting items in `MATCHED`.
 
-**S5. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
+**S6. `If`** — `Count` **is greater than** `0`. Everything below sits *inside*
+this If, above `End If`; drag actions in if they land outside. This is what
+stops a day with nothing ticked from erroring the automation out.
+
+**S7. `Combine Text`** — input `MATCHED`, Separator: **New Lines**. No property
+to pick here: S4 already collected names rather than reminder objects. Ticking
+something twice gives two lines, which is what the app counts.
+
+**S8. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
 set **Line Breaks: None** — wrapped Base64 is rejected by the API.
 
-**S6. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
+**S9. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
 dictionary action chokes on larger payloads). Type it in this order, so the
 variable lands *inside* the JSON rather than in front of it:
 
@@ -147,7 +151,7 @@ The finished action holds exactly one pill, sitting between two quote marks:
 Turn **Smart Punctuation off** (Settings → General → Keyboard) first, or iOS
 curls the quotes and the JSON is invalid.
 
-**S7. `Get Contents of URL`**
+**S10. `Get Contents of URL`**
 - URL — type the text but **insert `TODAY` and `RUNSTAMP` from the variable
   picker**, don't type their names:
   ```
@@ -156,9 +160,9 @@ curls the quotes and the JSON is invalid.
 - Method: **PUT**
 - Headers: `Authorization` → `Bearer <token>` · `Accept` →
   `application/vnd.github+json` · `X-GitHub-Api-Version` → `2022-11-28`
-- Request Body: **File** → the Text from S6
+- Request Body: **File** → the Text from S9
 
-**S8. `End If`.**
+**S11. `End If`.**
 
 Tap ▶︎ now. Success is a JSON response mentioning `"content"` plus a new file
 under `inbox/` in the repo. Open the app and the ticks should appear.
@@ -185,12 +189,13 @@ themselves:
   day produces the same stamp, and the second run collides with a 422. Format
   it from **Current Date**.
 - **A hardcoded date in the filter.** `Completion Date is on 01/08/2026` works
-  the day you build it and silently sweeps the wrong day forever after. It needs
-  to reference Current Date.
+  the day you build it and silently sweeps the wrong day forever after. The
+  field takes no variables, which is why the date match moved into a repeat
+  loop (S2–S4) rather than living in the filter.
 
 #### The YESTERDAY block is optional
 
-The optional second block repeats S1–S8 with the date filter set to yesterday and `YESTERDAY` in
+The optional second block repeats S1–S11 comparing against YESTERDAY instead of TODAY and `YESTERDAY` in
 the URL. It exists only to catch ticks made between 23:50 and midnight, or a
 night the automation didn't fire.
 
@@ -199,7 +204,7 @@ Check what your version's date filter actually offers. If there is a
 ten-minute window per day, and the Home Screen widget lets you force a sweep
 whenever you want.
 
-> **If you duplicate S1–S8 instead of rebuilding, re-check every variable in the
+> **If you duplicate S1–S11 instead of rebuilding, re-check every variable in the
 > copy.** Duplicated actions in Shortcuts frequently keep pointing at the
 > *original* actions' outputs, so the second block would silently upload the
 > first block's reminders under yesterday's filename. Rebuilding from scratch is
