@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "updatedAt": "2026-09-12T15:12:46.578Z",
+  "updatedAt": "2026-09-12T22:41:52.064Z",
   "state": {
     "habits": [
       {
@@ -8,55 +8,80 @@
         "title": "Journal",
         "type": "single",
         "emoji": "✍️",
-        "reps": 0,
-        "history": [],
+        "reps": 1,
+        "history": [
+          {
+            "t": 1789210800000,
+            "amount": 1
+          }
+        ],
         "createdAt": 1789064962359,
         "sessionValue": 0,
-        "lastCompletedAt": null
+        "lastCompletedAt": 1789210800000
       },
       {
         "id": "leer-20-p-ginas-yuq2",
         "title": "Leer 20 páginas",
         "type": "single",
         "emoji": "📚",
-        "reps": 0,
-        "history": [],
+        "reps": 1,
+        "history": [
+          {
+            "t": 1789210800000,
+            "amount": 1
+          }
+        ],
         "createdAt": 1789064962359,
         "sessionValue": 0,
-        "lastCompletedAt": null
+        "lastCompletedAt": 1789210800000
       },
       {
         "id": "tape-mouth-8wef",
         "title": "tape mouth",
         "type": "single",
         "emoji": "⛰️",
-        "reps": 0,
-        "history": [],
+        "reps": 1,
+        "history": [
+          {
+            "t": 1789210800000,
+            "amount": 1
+          }
+        ],
         "createdAt": 1789064962359,
         "sessionValue": 0,
-        "lastCompletedAt": null
+        "lastCompletedAt": 1789210800000
       },
       {
         "id": "go-to-sleep-mm3w",
         "title": "Go to sleep",
         "type": "single",
         "emoji": "🛏️",
-        "reps": 0,
-        "history": [],
+        "reps": 1,
+        "history": [
+          {
+            "t": 1789210800000,
+            "amount": 1
+          }
+        ],
         "createdAt": 1789064962359,
         "sessionValue": 0,
-        "lastCompletedAt": null
+        "lastCompletedAt": 1789210800000
       },
       {
         "id": "wash-teeth-night-liqz",
         "title": "Wash teeth Night",
         "type": "single",
         "emoji": "⛰️",
-        "reps": 0,
-        "history": [],
+        "reps": 1,
+        "history": [
+          {
+            "t": 1789210800000,
+            "amount": 1
+          }
+        ],
         "createdAt": 1789064962359,
         "sessionValue": 0,
-        "lastCompletedAt": null
+        "lastCompletedAt": 1789210800000
       },
       {
         "id": "tomar-pastillas-derma-8j1j",
@@ -170,7 +195,13 @@
       "stats": {
         "totalTaps": 1
       },
-      "syncedTicks": {}
+      "syncedTicks": {
+        "2026-09-12|wash-teeth-night-liqz": 1,
+        "2026-09-12|leer-20-p-ginas-yuq2": 1,
+        "2026-09-12|tape-mouth-8wef": 1,
+        "2026-09-12|journal-ploz": 1,
+        "2026-09-12|go-to-sleep-mm3w": 1
+      }
     }
   }
 }
