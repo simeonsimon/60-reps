@@ -1,17 +1,30 @@
-// Merge logic for the nightly Apple Reminders sweep.
+// Merge logic for the Apple Reminders sweep.
 //
-// A Shortcut drops one plain-text file per day into `inbox/`, named
-// `<YYYY-MM-DD>--<epoch>.txt`, holding the titles of every reminder completed
-// on that date (one per line, repeated if ticked more than once). Unique
-// filenames mean the Shortcut only ever PUTs — no SHA, no read-modify-write —
-// which is the fiddly part to build on iOS.
+// A Shortcut drops one plain-text file per run into `inbox/`, named
+// `sweep-<stamp>.txt`, holding one line per completed reminder:
+//
+//     2026-09-12|Gym
+//     2026-09-12|Gym
+//     2026-09-11|Leer 20 paginas
+//
+// Each line carries its own date, so the Shortcut never has to decide which day
+// is "today" — a comparison that is fiddly on iOS and was the step that kept
+// silently matching nothing. It dumps what it found; the grouping happens here.
+//
+// The older `<YYYY-MM-DD>--<stamp>.txt` layout (titles only, date in the
+// filename) is still read so existing files are not orphaned.
+//
+// Unique filenames mean the Shortcut only ever PUTs — no SHA, no
+// read-modify-write — which is the fiddly part to build on iOS.
 //
 // Everything here is pure so the reconcile can be reasoned about (and tested)
 // without touching the network.
 
 import { applyCompletion, startOfDay } from './habits.js'
 
-const FILE_RE = /^(\d{4}-\d{2}-\d{2})--(\d+)\.txt$/
+const RUN_FILE_RE = /^sweep-(\d+)\.txt$/
+const DAY_FILE_RE = /^(\d{4}-\d{2}-\d{2})--(\d+)\.txt$/
+const DATED_LINE_RE = /^(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)$/
 const TICK_RETENTION_DAYS = 90
 
 // Strip accents, emoji and punctuation so "Leer 20 páginas 📚" from Reminders
@@ -27,6 +40,23 @@ export function normalizeTitle(s) {
     .trim()
 }
 
+// One run's file: `YYYY-MM-DD|Title` per line. Lines that don't carry a date
+// are ignored rather than guessed at — a mis-built Shortcut should surface as
+// "nothing synced", never as reps credited to the wrong day.
+function parseDatedLines(text) {
+  const byDate = {}
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const m = DATED_LINE_RE.exec(line.trim())
+    if (!m) continue
+    const date = m[1]
+    const title = m[2].trim()
+    if (!title) continue
+    if (!byDate[date]) byDate[date] = []
+    byDate[date].push(title)
+  }
+  return byDate
+}
+
 function splitTitles(text) {
   return String(text || '')
     .split(/\r?\n/)
@@ -34,21 +64,29 @@ function splitTitles(text) {
     .filter(Boolean)
 }
 
-// Reminders logged at, say, 23:55 land in the *next* night's sweep, so every
-// run re-reports yesterday as well. Keeping only the newest file per date makes
-// that overlap self-healing instead of duplicating.
+// A day can appear in several runs — the sweep re-reports recent completions
+// every time it runs. The newest file that mentions a day wins for that day,
+// which makes the overlap self-healing instead of cumulative.
 export function parseSweepFiles(files) {
-  const latest = new Map()
+  const runs = []
   for (const file of files) {
-    const m = FILE_RE.exec(file.name || '')
-    if (!m) continue
-    const [, date, epoch] = m
-    const prev = latest.get(date)
-    if (prev && prev.epoch >= Number(epoch)) continue
-    latest.set(date, { epoch: Number(epoch), titles: splitTitles(file.text) })
+    const name = file.name || ''
+    const run = RUN_FILE_RE.exec(name)
+    if (run) {
+      runs.push({ stamp: Number(run[1]), byDate: parseDatedLines(file.text) })
+      continue
+    }
+    const day = DAY_FILE_RE.exec(name)
+    if (day) {
+      runs.push({ stamp: Number(day[2]), byDate: { [day[1]]: splitTitles(file.text) } })
+    }
   }
+
+  runs.sort((a, b) => a.stamp - b.stamp)
   const byDate = {}
-  for (const [date, v] of latest) byDate[date] = v.titles
+  for (const run of runs) {
+    for (const entry of Object.entries(run.byDate)) byDate[entry[0]] = entry[1]
+  }
   return byDate
 }
 

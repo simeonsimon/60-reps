@@ -108,5 +108,62 @@ console.log('\nreconcile — ordering across days')
   check('history ordered oldest first', dayOf(r.habits[0].history[0].t) === YESTERDAY, r.habits[0].history.map((e) => dayOf(e.t)))
 }
 
+
+console.log('\nparseSweepFiles — dated-line format')
+{
+  const byDate = parseSweepFiles([
+    { name: 'sweep-20260912164500.txt', text: '2026-09-12|Gym\n2026-09-12|Gym\n2026-09-11|Leer 20 paginas' },
+  ])
+  check('one run file can carry several days', Object.keys(byDate).sort().join() === '2026-09-11,2026-09-12', Object.keys(byDate))
+  check('repeated line counts twice', byDate['2026-09-12'].length === 2, byDate['2026-09-12'])
+  check('title parsed off the date', byDate['2026-09-11'][0] === 'Leer 20 paginas', byDate['2026-09-11'])
+}
+{
+  const byDate = parseSweepFiles([
+    { name: 'sweep-20260912090000.txt', text: '2026-09-12|Gym' },
+    { name: 'sweep-20260912230000.txt', text: '2026-09-12|Gym\n2026-09-12|Gym\n2026-09-12|Gym' },
+  ])
+  check('newest run wins for a day it re-reports', byDate['2026-09-12'].length === 3, byDate['2026-09-12'])
+}
+{
+  const byDate = parseSweepFiles([
+    { name: 'sweep-20260912230000.txt', text: '2026-09-12|Gym' },
+    { name: 'sweep-20260913230000.txt', text: '2026-09-13|Gym' },
+  ])
+  check('a later run does not erase a day it omits', byDate['2026-09-12'].length === 1 && byDate['2026-09-13'].length === 1, byDate)
+}
+{
+  const byDate = parseSweepFiles([
+    { name: 'sweep-1.txt', text: 'Gym\n  \n2026-09-12|Gym\nnot a date|X\n2026-09-12|' },
+  ])
+  check('undated lines are ignored, not guessed', byDate['2026-09-12'].length === 1, byDate)
+  check('no bogus date keys invented', Object.keys(byDate).length === 1, Object.keys(byDate))
+}
+{
+  const byDate = parseSweepFiles([
+    { name: '2026-09-10--100.txt', text: 'Gym' },
+    { name: 'sweep-20260912000000.txt', text: '2026-09-12|Gym' },
+    { name: 'README.md', text: 'nope' },
+  ])
+  check('old day-per-file format still reads', byDate['2026-09-10'][0] === 'Gym', byDate['2026-09-10'])
+  check('old and new formats coexist', Object.keys(byDate).length === 2, Object.keys(byDate))
+}
+{
+  const byDate = parseSweepFiles([
+    { name: '2026-09-12--999.txt', text: 'Gym\nGym' },
+    { name: 'sweep-20260912000000.txt', text: '2026-09-12|Gym' },
+  ])
+  check('old and new formats share one stamp ordering, newest wins', byDate['2026-09-12'].length === 1, byDate['2026-09-12'])
+}
+{
+  const r = reconcileSweep(
+    state([habit({ id: 'g', title: 'Gym', type: 'multi', reps: 0 })]),
+    parseSweepFiles([{ name: 'sweep-1.txt', text: `${YESTERDAY}|Gym\n${TODAY}|Gym\n${TODAY}|Gym` }]),
+    NOW,
+  )
+  check('end to end: dated lines reconcile to the right days', r.habits[0].reps === 3, r.habits[0].reps)
+  check('end to end: earliest day first in history', dayOf(r.habits[0].history[0].t) === YESTERDAY, r.habits[0].history.map((e) => dayOf(e.t)))
+}
+
 console.log(`\n${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)
