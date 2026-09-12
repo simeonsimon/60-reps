@@ -1,8 +1,163 @@
 {
   "v": 1,
-  "updatedAt": "2026-09-10T18:28:41.196Z",
+  "updatedAt": "2026-09-12T15:12:46.578Z",
   "state": {
-    "habits": [],
+    "habits": [
+      {
+        "id": "journal-ploz",
+        "title": "Journal",
+        "type": "single",
+        "emoji": "✍️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "leer-20-p-ginas-yuq2",
+        "title": "Leer 20 páginas",
+        "type": "single",
+        "emoji": "📚",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "tape-mouth-8wef",
+        "title": "tape mouth",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "go-to-sleep-mm3w",
+        "title": "Go to sleep",
+        "type": "single",
+        "emoji": "🛏️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "wash-teeth-night-liqz",
+        "title": "Wash teeth Night",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "tomar-pastillas-derma-8j1j",
+        "title": "Tomar pastillas derma",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "wash-teeth-morning-6e4u",
+        "title": "Wash teeth Morning",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "echar-suncream-h5ot",
+        "title": "Echar suncream",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "text-auntie-what-i-m-doing-ajw8",
+        "title": "Text auntie what i'm doing",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789064962359,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "entrenar-8h0d",
+        "title": "Entrenar",
+        "type": "single",
+        "emoji": "💪",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789065037141,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "wash-teeth-afternoon-7crf",
+        "title": "Wash teeth afternoon",
+        "type": "single",
+        "emoji": "🛏️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789065061698,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "meditar-h0dz",
+        "title": "Meditar",
+        "type": "single",
+        "emoji": "🧘",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789065076227,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "make-bed-49nn",
+        "title": "Make bed",
+        "type": "single",
+        "emoji": "🛏️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789065086283,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      },
+      {
+        "id": "llamar-a-alguien-6gg5",
+        "title": "Llamar a alguien",
+        "type": "single",
+        "emoji": "⛰️",
+        "reps": 0,
+        "history": [],
+        "createdAt": 1789065096964,
+        "sessionValue": 0,
+        "lastCompletedAt": null
+      }
+    ],
     "profile": {
       "premium": true,
       "skin": "ledger",
