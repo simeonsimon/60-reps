@@ -1,20 +1,25 @@
 # Logging habits from Apple Reminders
 
-Tick reminders on your phone like normal. Once a night a Shortcut sweeps up
-everything you completed and writes it to this repo; the app folds it in the
-next time you open it.
+Tick reminders on your phone like normal. Once a night a Shortcut sweeps up what
+you completed and writes it to this repo; the app folds it in the next time you
+open it.
+
+Verified working end to end on iOS 26.6, 2026-09-12.
 
 ## Why it works this way
 
-Two iOS limits shape the whole design, and both are worth knowing before you
-try to "improve" it:
+Three iOS limits shape the design. Each one killed an earlier version, so they
+are worth knowing before you try to "improve" it:
 
-- **Shortcuts has no "reminder completed" trigger.** Apple's automation
-  triggers are time of day, alarm, sleep, workout, NFC, focus, charger and so
-  on — nothing fires when you check a reminder off. So the sweep has to be
-  pulled on a schedule; it can't be pushed the moment you tick.
-- **iOS ignores web-push action buttons.** Only "View" ever renders, so a
-  "Done ✓" button on the reminder notification isn't an option either.
+- **Shortcuts has no "reminder completed" trigger.** The automation triggers are
+  time of day, alarm, sleep, workout, NFC, focus, charger and so on. Nothing
+  fires when you tick a reminder, so the sweep has to be pulled on a schedule.
+- **iOS ignores web-push action buttons.** Only "View" renders, so a "Done"
+  button on the reminder notification isn't available either.
+- **`Find Reminders` date filters accept a literal date only — no variables.**
+  The Shortcut therefore cannot ask for "completed today". It sweeps everything
+  completed and stamps each line with its own date; the grouping happens in the
+  app, where it is testable.
 
 The app's data also can't be written from outside the browser, which is why the
 sweep goes through the repo rather than straight into the app.
@@ -23,225 +28,132 @@ sweep goes through the repo rather than straight into the app.
 
 ### 1. A Reminders list called `Habits`
 
-Make a list named **Habits** and add a repeating reminder per habit. **The
-reminder title must match the habit title in the app.** Matching ignores case,
-accents, emoji and punctuation — `Leer 20 páginas 📚` matches a habit called
-`Leer 20 paginas` — but nothing smarter than that. Anything unmatched shows up
-in *Settings → Sync* so you can fix the name.
+Make a list named exactly **`Habits`** and add a repeating reminder per habit.
+**The reminder title must match the habit title in the app.** Matching ignores
+case, accents, emoji and punctuation — `Leer 20 páginas 📚` matches a habit
+called `Leer 20 paginas` — but nothing cleverer than that. Anything unmatched is
+listed in *Settings → Sync*.
+
+A habit with no reminder never syncs. If you add habits later, add reminders too.
 
 ### 2. A GitHub token
 
 github.com → Settings → Developer settings → **Fine-grained tokens** → Generate:
 
-- **Repository access:** Only select repositories → `simeonsimon/60-reps`
-- **Permissions:** Repository permissions → **Contents: Read and write**
-- Expiry: whatever you'll remember to rotate
+- **Repository access:** *Only select repositories* → `simeonsimon/60-reps`.
+  Not "Public repositories" — that is read-only and cannot write.
+- **Permissions:** *Repository permissions* → **Contents** → **Read and write**.
+  It defaults to "No access" and is easy to scroll past.
+- **Expiration:** a year. The 30-day default expires silently, and the only
+  symptom is that syncing quietly stops.
 
-Paste it into the app under **Settings → Sync**. It's stored on that device
-only — it is never in the app's code, which matters because the app is served
-from public GitHub Pages.
-
-You'll paste the same token into the Shortcut below.
+Paste it into the app under **Settings → Sync**, and into the Shortcut below. It
+lives only on your device — never in the app's code, which matters because the
+app is served from public GitHub Pages.
 
 ### 3. The Shortcut
 
-One shortcut named **Sweep habits**: some date setup, then a sweep block for
-today, and optionally the same block again for yesterday.
+One shortcut named **Sweep habits**, 14 actions. This is the configuration that
+actually works; earlier drafts of this file described several that don't.
 
-**Set up the dates first.** Each is a pair of actions: format the date, then
-store it under a name you can reuse.
-
-> **Naming variables.** Shortcuts won't let you name an action's output from the
-> action itself — a magic variable can only be renamed from somewhere it's
-> already *used* (tap the blue pill → **Variable Name**). Since nothing
-> references these dates yet, use a **Set Variable** action instead: add it,
-> tap the name field, type the name. Its input defaults to the previous
-> action's output, which is exactly what you want.
-
-| # | Action | Settings |
-|---|---|---|
-| 1 | `Format Date` | Date: **Current Date** · Format: **Custom** → `yyyy-MM-dd` |
-| 2 | `Set Variable` | Name: `TODAY` (input: the Formatted Date above) |
-| 3 | `Format Date` | Date: **Current Date** · Custom → `yyyyMMddHHmmss` |
-| 4 | `Set Variable` | Name: `RUNSTAMP` |
-
-Both `Format Date` actions take **Current Date**. Feeding the second one `TODAY`
-is the obvious-looking shortcut and it's wrong: `TODAY` is already a formatted
-string pinned to midnight, so every run of the day would produce an identical
-`RUNSTAMP`.
-
-Only add these three if you're building the optional YESTERDAY block:
-
-| # | Action | Settings |
-|---|---|---|
-| 5 | `Adjust Date` | **Current Date** · **Subtract** · **1** · **Day** — not `TODAY`, which is a string |
-| 6 | `Format Date` | Date: the **Adjusted Date** · Custom → `yyyy-MM-dd` |
-| 7 | `Set Variable` | Name: `YESTERDAY` |
-
-To set **Custom** format: tap the `Format Date` action, set *Date Format* to
-**Custom**, then type the pattern into the *Format String* field that appears.
-
-`RUNSTAMP` is what keeps each night's file unique. Without it, tonight's sweep
-of yesterday would collide with last night's sweep of the same day and the
-upload would fail.
-
-Everywhere below that names a variable in caps, insert it from the variable
-row above the keyboard (or the **Select Variable** button) — don't type the
-word literally, or you'll upload a file called `TODAY--RUNSTAMP.txt`.
-
-**The sweep block goes in the same shortcut**, directly below the date setup:
+Turn **Smart Punctuation off** first (Settings → General → Keyboard).
 
 ```
-date setup    4 actions  (7 if you build YESTERDAY)
-sweep block   11 actions — S1 to S11 below
-optional      the same 11 actions again, for yesterday
+ 1  Format Date      Current Date
+                     Date Format    Custom
+                     Format String  yyyyMMddHHmmss
+                     Locale         Default
+ 2  Set Variable     RUNSTAMP
+
+ 3  Find Reminders   where All of the following are true
+                     List  is  Habits
+                     Is Completed
+                     (no date filter - see below)
+
+ 4  Repeat with each item in  Reminders
+ 5      Format Date  Repeat Item > Completion Date
+                     Format String  yyyy-MM-dd
+ 6      Text         <Formatted Date>|<Repeat Item > Name>
+ 7      Add to Variable   MATCHED        value: <Text>
+ 8  End Repeat
+
+ 9  Count  Items  in  MATCHED
+10  If  Count  is greater than  0
+11      Combine  MATCHED  with  New Lines
+12      Base64 Encode  Combined Text     Line Breaks: None
+13      Get Contents of URL
+              https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/sweep-<RUNSTAMP>.txt
+              Method        PUT
+              Headers       Authorization         Bearer <token>
+                            Accept                application/vnd.github+json
+                            X-GitHub-Api-Version  2022-11-28
+              Request Body  JSON
+                            message  (Text)  sweep
+                            content  (Text)  <Base64 Encoded>
+                            branch   (Text)  main
+14  End If
 ```
 
-**S1. `Find Reminders`** — tap **Filter** and add exactly two:
+Anything in angle brackets above is an **inserted variable**, not typed text. In
+the app it renders as a coloured pill. Typing the word instead is the single
+most common way to break this.
 
-- `List` **is** `Habits`
-- `Is Completed` **is** `Yes`
+#### The fiddly parts
 
-**Do not filter by date here.** The obvious move is a third filter like
-`Completion Date is on <date>`, but Shortcuts only accepts a *literal* date in
-that field — no variables. It would be correct on the day you built it and
-silently sweep the wrong day forever after. The date match happens in S2–S4
-instead, against a `TODAY` that is recomputed every run.
-
-**S2. `Repeat with Each`** over the **Reminders** from S1.
-
-**S3.** Inside the repeat, **`Format Date`** → tap its input, choose **Repeat
-Item**, then tap that pill and pick the **Completion Date** property. Format:
-Custom → `yyyy-MM-dd`. If your version doesn't offer Completion Date as a
-property, use **Deadline / Due Date** — for daily-repeating habit reminders the
-two fall on the same day.
-
-**S4.** Still inside the repeat: **`If`** `Formatted Date` **is** `TODAY` →
-**`Add to Variable`** named `MATCHED`, value the **Repeat Item ▸ Name**
-property. Then `End If`, `End Repeat`.
-
-Use **`Add to Variable`**, not `Set Variable`. `Set` overwrites on every pass
-and leaves you with only the last match; `Add` appends, building a list.
-
-**S5. `Count`** — counting items in `MATCHED`.
-
-**S6. `If`** — `Count` **is greater than** `0`. Everything below sits *inside*
-this If, above `End If`; drag actions in if they land outside. This is what
-stops a day with nothing ticked from erroring the automation out.
-
-**S7. `Combine Text`** — input `MATCHED`, Separator: **New Lines**. No property
-to pick here: S4 already collected names rather than reminder objects. Ticking
-something twice gives two lines, which is what the app counts.
-
-**S8. `Base64 Encode`** the Combined Text. Tap the **⌄** to expand the action and
-set **Line Breaks: None** — wrapped Base64 is rejected by the API.
-
-**S9. `Text`** — the request body. Build it as `Text`, never `Dictionary` (the
-dictionary action chokes on larger payloads). Type it in this order, so the
-variable lands *inside* the JSON rather than in front of it:
-
-1. type `{"message": "sweep", "content": "`
-2. insert the **Base64 Encoded** variable
-3. type `", "branch": "main"}`
-
-The finished action holds exactly one pill, sitting between two quote marks:
-```
-{"message": "sweep", "content": «Base64 Encoded», "branch": "main"}
-```
-Turn **Smart Punctuation off** (Settings → General → Keyboard) first, or iOS
-curls the quotes and the JSON is invalid.
-
-**S10. `Get Contents of URL`**
-- URL — type the text but **insert `TODAY` and `RUNSTAMP` from the variable
-  picker**, don't type their names:
-  ```
-  https://api.github.com/repos/simeonsimon/60-reps/contents/inbox/TODAY--RUNSTAMP.txt
-  ```
-- Method: **PUT**
-- Headers: `Authorization` → `Bearer <token>` · `Accept` →
-  `application/vnd.github+json` · `X-GitHub-Api-Version` → `2022-11-28`
-- Request Body: **File** → the Text from S9
-
-**S11. `End If`.**
-
-Tap ▶︎ now. Success is a JSON response mentioning `"content"` plus a new file
-under `inbox/` in the repo. Open the app and the ticks should appear.
-
-#### Mistakes this build actually produced
-
-Every one of these was hit on the first real attempt, and none of them announce
-themselves:
-
-- **The shortcut outputs `0` and nothing uploads.** `Count` was zero, so the
-  `If` skipped everything. The filter matched no reminders — check the list is
-  named exactly `Habits` and that you have actually ticked something today.
-  The app reporting "up to date" is correct in this case, not a failure.
-- **The Base64 pill lands at the front of the Text action** rather than inside
-  the JSON, leaving the literal word `BASE64` in the body. The result is not
-  valid JSON and GitHub answers 400. There must be exactly one pill, sitting
-  between the two quote marks after `"content":`.
-- **Smart punctuation rewrites `"` as `"`**, which also kills the JSON. Turn it
-  off in Settings → General → Keyboard.
-- **`TODAY` and `RUNSTAMP` typed into the URL as words.** They must be inserted
-  as variables; otherwise you upload a file called `TODAY--RUNSTAMP.txt`.
-- **`RUNSTAMP` formatted from `TODAY` or `YESTERDAY`** instead of Current Date.
-  Those are already-formatted *strings* fixed to midnight, so every run of the
-  day produces the same stamp, and the second run collides with a 422. Format
-  it from **Current Date**.
-- **A hardcoded date in the filter.** `Completion Date is on 01/08/2026` works
-  the day you build it and silently sweeps the wrong day forever after. The
-  field takes no variables, which is why the date match moved into a repeat
-  loop (S2–S4) rather than living in the filter.
-
-#### The YESTERDAY block is optional
-
-The optional second block repeats S1–S11 comparing against YESTERDAY instead of TODAY and `YESTERDAY` in
-the URL. It exists only to catch ticks made between 23:50 and midnight, or a
-night the automation didn't fire.
-
-Check what your version's date filter actually offers. If there is a
-**Yesterday** option, build it. If there isn't, **skip it** — the cost is a
-ten-minute window per day, and the Home Screen widget lets you force a sweep
-whenever you want.
-
-> **If you duplicate S1–S11 instead of rebuilding, re-check every variable in the
-> copy.** Duplicated actions in Shortcuts frequently keep pointing at the
-> *original* actions' outputs, so the second block would silently upload the
-> first block's reminders under yesterday's filename. Rebuilding from scratch is
-> less error-prone than hunting for that.
+- **Naming variables.** You cannot name an action's output from that action — a
+  magic variable is renameable only from somewhere it is already used. Use an
+  explicit `Set Variable` action, as in step 2.
+- **`RUNSTAMP` must come from `Current Date`,** not from another formatted
+  string. Feeding it an already-formatted date pins it to midnight, so every run
+  that day produces the same filename and the second one fails with 422.
+- **Casing matters.** Lowercase `yyyy` (uppercase `YYYY` is week-based year and
+  breaks in early January), `MM` month, `mm` minutes, `HH` 24-hour.
+  Autocapitalize will try to give you `Yyyy`.
+- **Steps 5-7 must sit inside the Repeat**, indented. If they slip below
+  `End Repeat` the loop body is empty and nothing accumulates.
+- **`Add to Variable`, not `Set Variable`** — `Set` overwrites on every pass and
+  leaves you with a single item.
+- **Both `Repeat Item` references need a property picked.** Insert the variable,
+  then tap the pill: `Completion Date` in step 5, `Name` in step 6.
+- **Use `Request Body: JSON`, not `File`.** Handing `File` a Text variable sends
+  multipart form data instead of a JSON body; GitHub answers with something
+  Shortcuts can't read and you get *"cannot parse response"*.
+- Spanish region with English language is fine — both format strings are pure
+  numbers, so `Locale: Default` is correct.
 
 ### 4. The nightly automation
 
-Shortcuts → **Automation** → **+** → **Time of Day** → **23:50**, Daily → run
-**Sweep habits** → turn **Ask Before Running off**. It won't run silently
-otherwise.
+Shortcuts → **Automation** → **+** → **Time of Day** → **23:50** → Daily → run
+**Sweep habits** → **Ask Before Running: OFF**. It won't run silently otherwise.
 
-Also add the shortcut to a Home Screen widget — handy for forcing a sync after
-a late tick.
+Also add the shortcut to a Home Screen widget so you can force a sweep after a
+late tick.
 
 ## How it behaves
 
-- **Ticks after 23:50** are only caught if you built the optional YESTERDAY
-  block — it re-reports the previous day, so a reminder ticked at 23:55 lands in
-  the next night's sweep. Without it, tick it in the app or run the shortcut
-  from the widget.
-- **Re-running is safe.** Applying a sweep is idempotent: files record how many
-  ticks a day had, not "add one more". Running the shortcut five times in a row
-  changes nothing.
-- **In-app taps aren't double counted.** For daily and multi habits the reps
+The uploaded file is one line per completed reminder:
+
+```
+2026-09-12|Wash teeth Night
+2026-09-12|Leer 20 páginas
+2026-09-12|Journal
+```
+
+- **Re-running is safe.** Applying a sweep is idempotent: `profile.syncedTicks`
+  records how many ticks a day contributed, so replaying a file changes nothing.
+- **In-app taps aren't double counted.** For daily and multi habits, the reps
   already logged that day act as a floor.
-- **Backfilled reps get the right date**, so streaks and the heatmap stay
-  correct rather than piling everything onto sweep night.
-- **Progress habits** count one tick as one `step` (e.g. 20 throws), not one rep.
+- **Reps land on the day you ticked them**, not on sweep night, so streaks and
+  the heatmap stay correct. Ticks from earlier days get swept and dated properly
+  too.
+- **Undated lines are ignored** rather than assumed to be today, so a mis-built
+  Shortcut shows up as "nothing synced" and never as reps on the wrong day.
 - Sweep files older than 14 days are cleaned up automatically.
 
 ## Checking it works
 
-The app syncs on launch and whenever it returns to the foreground. *Settings →
-Sync* shows what happened, and **Sync now** forces a pull.
-
-To test without waiting for the night, run the shortcut by hand, then open the
-app — the ticks should appear within a second or two.
+The app syncs on launch and whenever it returns to the foreground.
+*Settings → Sync* shows what happened; **Sync now** forces a pull.
 
 The merge logic has tests:
 
@@ -249,14 +161,33 @@ The merge logic has tests:
 npm test
 ```
 
-## If something looks wrong
+## Debugging
+
+**Read the uploaded file, not the Shortcut UI.** Temporarily delete the
+`If Count > 0` guard (action 10) so it always uploads, run it, then look in
+`inbox/`. A 0-byte file, a file of bare names, and a file of dated lines each
+point at a different layer. This is much faster than inspecting actions.
+
+**Every GitHub failure has a distinct response shape:**
+
+| Response | Cause |
+|---|---|
+| `401 Requires authentication` | no `Authorization` header |
+| `401 Bad credentials` | token wrong — angle brackets left in, trailing space, expired |
+| `404` + generic `documentation_url: docs.github.com/rest` | URL matches no route, e.g. `/content/` instead of `/contents/` |
+| `404` + `...#get-repository-content` | a **GET** on a missing file — the Method isn't PUT |
+| `404` + `...#create-or-update-file-contents` | right endpoint, wrong owner/repo |
+| `404 Branch x not found` | wrong branch |
+| `422 sha wasn't supplied` | that filename already exists — `RUNSTAMP` isn't unique |
+| *cannot parse response* | `Request Body` is `File`; switch it to `JSON` |
+
+A **PUT never 404s because the file is missing** — PUT creates it. So a 404 on
+the upload is never about the path.
 
 | Symptom | Cause |
 |---|---|
-| "GitHub rejected the token" | Token expired, or missing Contents: Read and write on this repo |
-| A reminder is listed as unmatched | Reminder title doesn't match any habit title |
-| Nothing syncs at all | The automation has *Ask Before Running* on, or the list isn't named `Habits` |
-| Upload fails at 23:50 | Base64 Encode has line breaks on, or the body was built with `Dictionary` instead of `Text` |
-| Can't find a way to name a variable | You can't name an action's output from the action — add a `Set Variable` action after it (see the note in step 3) |
-| A file called `TODAY--RUNSTAMP.txt` appears | The variable names were typed as text instead of inserted as variables |
-| 422 from GitHub | Two runs produced the same filename — `RUNSTAMP` is missing or not `yyyyMMddHHmmss` |
+| Outputs `0`, nothing uploads | `MATCHED` is empty — the loop found nothing, or `Add to Variable` isn't wired to the `Text` |
+| Uploads a 0-byte file | same, with the `If Count > 0` guard removed |
+| A reminder shows as unmatched in the app | its title doesn't match any habit title |
+| "Please choose a value for each parameter" | a blank leftover `Condition` or header row — delete it with its minus button |
+| Nothing syncs overnight | the automation has *Ask Before Running* on, or the list isn't named `Habits` |
