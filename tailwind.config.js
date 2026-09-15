@@ -23,6 +23,16 @@ export default {
         muted: 'rgb(var(--c-muted) / <alpha-value>)',
         accent: 'rgb(var(--c-accent) / <alpha-value>)',
         'accent-soft': 'rgb(var(--c-accent) / 0.15)',
+        'accent-contrast': 'rgb(var(--c-accent-contrast) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
+        star: 'rgb(var(--c-star) / <alpha-value>)',
+      },
+      fontSize: {
+        '3xs': '9px',
+        '2xs': '10px',
+        xs2: '11px',
+        sm2: '13px',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],

@@ -165,7 +165,7 @@ export default function ImportPanel({ onClose }) {
             <div
               key={i}
               className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors ${
-                it.on ? 'border-accent/40 bg-surface' : 'border-white/5 bg-surface/40'
+                it.on ? 'border-accent/40 bg-surface' : 'border-line/5 bg-surface/40'
               }`}
             >
               <button
@@ -174,9 +174,9 @@ export default function ImportPanel({ onClose }) {
                 aria-pressed={it.on}
                 aria-label={it.on ? 'Skip this reminder' : 'Include this reminder'}
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold transition-colors ${
-                  it.on ? 'border-accent bg-accent' : 'border-white/20 bg-transparent'
+                  it.on ? 'border-accent bg-accent' : 'border-line/20 bg-transparent'
                 }`}
-                style={it.on ? { color: 'rgb(var(--c-base))' } : undefined}
+                style={it.on ? { color: 'rgb(var(--c-accent-contrast))' } : undefined}
               >
                 {it.on ? '✓' : ''}
               </button>
@@ -190,7 +190,7 @@ export default function ImportPanel({ onClose }) {
           ))}
         </div>
         <div className="sticky bottom-0 -mx-1 space-y-2 bg-gradient-to-t from-base via-base/90 to-transparent px-1 pb-1 pt-3">
-          <button type="button" onClick={importAll} disabled={picked.length === 0} className={ACCENT_BTN} style={{ color: 'rgb(var(--c-base))' }}>
+          <button type="button" onClick={importAll} disabled={picked.length === 0} className={ACCENT_BTN} style={{ color: 'rgb(var(--c-accent-contrast))' }}>
             {picked.length === 0 ? 'Nothing selected' : `Start ${picked.length} climb${picked.length === 1 ? '' : 's'}`}
           </button>
           <button type="button" onClick={() => setPhase('idle')} className="w-full py-1 text-center text-xs font-medium text-muted">
@@ -229,7 +229,7 @@ export default function ImportPanel({ onClose }) {
           <p className="text-sm text-muted">
             Take a screenshot of your Apple Reminders list, pick it here, and each reminder becomes a 60-rep climb.
           </p>
-          <button type="button" onClick={() => fileRef.current?.click()} className={ACCENT_BTN} style={{ color: 'rgb(var(--c-base))' }}>
+          <button type="button" onClick={() => fileRef.current?.click()} className={ACCENT_BTN} style={{ color: 'rgb(var(--c-accent-contrast))' }}>
             Choose screenshot
           </button>
           <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" aria-label="Reminders screenshot" />
@@ -247,14 +247,14 @@ export default function ImportPanel({ onClose }) {
             onChange={(e) => setPasted(e.target.value)}
             rows={6}
             placeholder={'Gym\nRead 10 pages\nAnki reviews'}
-            className="w-full resize-none rounded-2xl border border-white/10 bg-surface px-4 py-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+            className="w-full resize-none rounded-2xl border border-line/10 bg-surface px-4 py-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
           />
           <button
             type="button"
             onClick={() => toReview(parseReminderLines(pasted))}
             disabled={!pasted.trim()}
             className={ACCENT_BTN}
-            style={{ color: 'rgb(var(--c-base))' }}
+            style={{ color: 'rgb(var(--c-accent-contrast))' }}
           >
             Read the list
           </button>

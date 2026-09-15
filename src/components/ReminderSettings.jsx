@@ -62,7 +62,7 @@ export default function ReminderSettings() {
           onClick={handleEnable}
           disabled={busy || !pushSupported()}
           className="w-full rounded-2xl bg-accent px-4 py-3 text-sm font-bold disabled:opacity-40"
-          style={{ color: 'rgb(var(--c-base))' }}
+          style={{ color: 'rgb(var(--c-accent-contrast))' }}
         >
           {busy ? 'Setting up…' : 'Enable notifications on this device'}
         </button>
@@ -79,7 +79,7 @@ export default function ReminderSettings() {
                 <span className="text-xl">{h.emoji || '⛰️'}</span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-ink">{h.title}</div>
-                  <div className="text-[11px] text-muted">{daysLabel(h)}</div>
+                  <div className="text-xs2 text-muted">{daysLabel(h)}</div>
                 </div>
                 <input
                   type="time"
@@ -87,7 +87,7 @@ export default function ReminderSettings() {
                   onChange={(e) =>
                     updateHabit(h.id, { reminder: { time: e.target.value, enabled: !!e.target.value } })
                   }
-                  className="rounded-xl border border-white/10 bg-elevated px-2.5 py-1.5 text-sm text-ink outline-none focus:border-accent"
+                  className="rounded-xl border border-line/10 bg-elevated px-2.5 py-1.5 text-sm text-ink outline-none focus:border-accent"
                 />
                 <button
                   onClick={() => updateHabit(h.id, { reminder: r.time ? { ...r, enabled: !r.enabled } : null })}
@@ -111,12 +111,12 @@ export default function ReminderSettings() {
             className={`relative w-full rounded-2xl px-4 py-3 text-sm font-bold transition-colors disabled:opacity-40 ${
               dirty ? 'bg-accent' : 'bg-surface text-muted'
             }`}
-            style={dirty ? { color: 'rgb(var(--c-base))' } : undefined}
+            style={dirty ? { color: 'rgb(var(--c-accent-contrast))' } : undefined}
           >
             {dirty && <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-red-400" />}
             {dirty ? 'Save reminders to cloud (1 tap on GitHub)' : `Reminders synced · ${activeCount} active`}
           </button>
-          <p className="px-1 text-[11px] leading-relaxed text-muted">
+          <p className="px-1 text-xs2 leading-relaxed text-muted">
             Saving opens a prefilled GitHub issue — just tap <span className="text-ink">Submit</span>. A
             workflow stores the schedule and delivers your pushes, even with the app closed.
           </p>

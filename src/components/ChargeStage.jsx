@@ -144,8 +144,8 @@ const ChargeStage = forwardRef(function ChargeStage({ accentGlow = true }, ref) 
         // Plain base with one soft wash of the skin's accent, high and centred,
         // so the surface has somewhere to breathe without becoming a gradient.
         background: accentGlow
-          ? 'radial-gradient(120% 80% at 50% 18%, rgb(var(--c-accent) / 0.10), transparent 62%), rgb(var(--c-base))'
-          : 'rgb(var(--c-base))',
+          ? 'radial-gradient(120% 80% at 50% 18%, rgb(var(--c-accent) / 0.10), transparent 62%), rgb(var(--c-accent-contrast))'
+          : 'rgb(var(--c-accent-contrast))',
         // Origin defaults to centre until a finger lands.
         '--ox': '50%',
         '--oy': '50%',
