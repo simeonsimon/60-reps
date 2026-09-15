@@ -26,7 +26,7 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
                 key={h.id}
                 onClick={() => onSelect(h.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  on ? 'border-accent bg-accent-soft text-accent' : 'border-white/5 bg-surface text-muted'
+                  on ? 'border-accent bg-accent-soft text-accent' : 'border-line/5 bg-surface text-muted'
                 }`}
               >
                 <span>{h.emoji || '⛰️'}</span>

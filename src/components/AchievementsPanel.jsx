@@ -44,7 +44,7 @@ export default function AchievementsPanel() {
             <div
               key={a.id}
               className={`flex flex-col items-center rounded-3xl border p-3 text-center transition-colors ${
-                unlocked ? 'border-accent/40 bg-accent-soft' : 'border-white/5 bg-surface'
+                unlocked ? 'border-accent/40 bg-accent-soft' : 'border-line/5 bg-surface'
               }`}
             >
               <div
@@ -62,7 +62,7 @@ export default function AchievementsPanel() {
                 </svg>
               </div>
               <div className="mt-2 text-xs font-semibold text-ink">{secret ? 'Hidden' : a.name}</div>
-              <div className="mt-0.5 text-[10px] leading-tight text-muted">
+              <div className="mt-0.5 text-2xs leading-tight text-muted">
                 {secret ? 'Keep climbing to reveal' : a.desc}
               </div>
             </div>

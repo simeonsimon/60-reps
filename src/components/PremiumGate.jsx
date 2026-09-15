@@ -12,7 +12,7 @@ export default function PremiumGate({ feature, blurb }) {
       <button
         onClick={() => setProfile({ premium: true })}
         className="mt-4 rounded-full bg-accent px-6 py-2.5 text-sm font-bold"
-        style={{ color: 'rgb(var(--c-base))' }}
+        style={{ color: 'rgb(var(--c-accent-contrast))' }}
       >
         Unlock everything
       </button>

@@ -17,6 +17,8 @@
   --c-ink: 245 245 247;
   --c-muted: 148 148 158;
   --c-accent: 122 162 255;   /* vivid periwinkle */
+  --c-line: 48 48 56;        /* hairline, tinted per skin */
+  --c-accent-contrast: 10 10 11; /* readable ink on an accent fill */
 }
 
 [data-skin='ledger'] {
@@ -26,6 +28,8 @@
   --c-ink: 232 246 239;
   --c-muted: 134 160 148;
   --c-accent: 52 211 153;    /* emerald */
+  --c-line: 34 52 44;
+  --c-accent-contrast: 7 13 11;
 }
 
 [data-skin='wireframe'] {
@@ -35,6 +39,8 @@
   --c-ink: 224 255 244;
   --c-muted: 110 140 132;
   --c-accent: 56 255 180;    /* neon mint */
+  --c-line: 28 40 48;
+  --c-accent-contrast: 6 8 10;
 }
 
 [data-skin='karat'] {
@@ -44,6 +50,8 @@
   --c-ink: 247 240 224;
   --c-muted: 168 154 122;
   --c-accent: 226 183 92;    /* brilliant gold */
+  --c-line: 58 50 36;
+  --c-accent-contrast: 18 16 12;
 }
 
 [data-skin='cedar'] {
@@ -53,6 +61,15 @@
   --c-ink: 240 228 212;
   --c-muted: 176 150 122;
   --c-accent: 197 124 74;    /* warm cedar terracotta */
+  --c-line: 74 60 46;
+  --c-accent-contrast: 30 24 18;
+}
+
+/* Attention colours stay skin-independent on purpose: they must still read as
+   attention/gold even on a skin (Karat) whose accent is already gold. */
+:root {
+  --c-warn: 251 146 60;
+  --c-star: 250 204 21;
 }
 
 /* Natural deceleration curves. No bounce — the hold gesture is a commitment,

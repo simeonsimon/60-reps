@@ -71,13 +71,13 @@ export default function SettingsPanel() {
                 onClick={() => setSkin(s.id)}
                 disabled={locked}
                 className={`relative overflow-hidden rounded-3xl border p-4 text-left transition-all ${
-                  isActive ? 'border-accent' : 'border-white/5'
+                  isActive ? 'border-accent' : 'border-line/5'
                 } ${locked ? 'opacity-50' : ''}`}
                 style={{ background: 'rgb(var(--c-surface))' }}
               >
                 <span className="mb-2 inline-block h-6 w-6 rounded-full" style={{ background: s.swatch }} />
                 <div className="text-sm font-bold text-ink">{s.name}</div>
-                <div className="text-[11px] leading-tight text-muted">{s.blurb}</div>
+                <div className="text-xs2 leading-tight text-muted">{s.blurb}</div>
                 {locked && <span className="absolute right-3 top-3 text-xs">🔒</span>}
                 {isActive && <span className="absolute right-3 top-3 text-xs text-accent">●</span>}
               </button>

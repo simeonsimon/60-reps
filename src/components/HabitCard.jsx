@@ -151,12 +151,12 @@ export default function HabitCard({ habit, active, onUnlock }) {
           style={{ top: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)' }}
         >
           <span className="text-3xl drop-shadow-lg">{habit.emoji || '⛰️'}</span>
-          <span className="rounded-full bg-surface/70 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-muted backdrop-blur">
+          <span className="rounded-full bg-surface/70 px-2.5 py-1 text-xs2 font-medium uppercase tracking-wide text-muted backdrop-blur">
             {habit.type === 'single' ? 'Daily' : habit.type === 'multi' ? 'Multi' : 'Progress'}
           </span>
           {hasSchedule && (
             <span
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium backdrop-blur ${
+              className={`rounded-full px-2.5 py-1 text-xs2 font-medium backdrop-blur ${
                 restDay ? 'bg-surface/70 text-muted' : 'bg-accent-soft text-accent'
               }`}
             >
@@ -164,7 +164,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
             </span>
           )}
           {anchor && (
-            <span className="rounded-full bg-surface/70 px-2.5 py-1 text-[11px] font-medium text-muted backdrop-blur">
+            <span className="rounded-full bg-surface/70 px-2.5 py-1 text-xs2 font-medium text-muted backdrop-blur">
               ⛓ after {anchor.emoji || ''} {anchor.title.length > 14 ? anchor.title.slice(0, 14) + '…' : anchor.title}
             </span>
           )}
@@ -217,7 +217,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
       {/* ── Info panel ──────────────────────────────────────────────────── */}
       <div
         ref={panelRef}
-        className="relative z-10 mx-3 mb-3 origin-bottom rounded-4xl border border-white/5 bg-surface/80 p-5 shadow-card backdrop-blur-xl"
+        className="relative z-10 mx-3 mb-3 origin-bottom rounded-4xl border border-line/5 bg-surface/80 p-5 shadow-card backdrop-blur-xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -243,7 +243,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
           <ProgressRing value={pct} size={76} stroke={7}>
             <div className="text-center leading-none">
               <div className="text-lg font-bold text-ink">{repsCapped}</div>
-              <div className="text-[10px] text-muted">/ {GOAL}</div>
+              <div className="text-2xs text-muted">/ {GOAL}</div>
             </div>
           </ProgressRing>
         </div>
@@ -256,7 +256,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
               style={{ width: `${pct * 100}%` }}
             />
           </div>
-          <div className="mt-1.5 flex justify-between text-[11px] text-muted">
+          <div className="mt-1.5 flex justify-between text-xs2 text-muted">
             <span>The climb to mastery</span>
             <span>{Math.round(pct * 100)}%</span>
           </div>

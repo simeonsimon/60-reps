@@ -69,7 +69,7 @@ export default function SyncPanel() {
           <div className="text-xs font-semibold text-amber-200">
             {sync.unmatched.length} reminder{sync.unmatched.length === 1 ? '' : 's'} didn't match a habit
           </div>
-          <div className="mt-1 text-[11px] leading-relaxed text-muted">
+          <div className="mt-1 text-xs2 leading-relaxed text-muted">
             {sync.unmatched.join(' · ')} — rename the reminder to match the habit exactly, or add the habit here.
           </div>
         </div>
@@ -77,7 +77,7 @@ export default function SyncPanel() {
 
       <div className="rounded-2xl bg-surface px-4 py-3">
         <div className="text-sm font-semibold text-ink">GitHub token</div>
-        <div className="mt-0.5 text-[11px] leading-relaxed text-muted">
+        <div className="mt-0.5 text-xs2 leading-relaxed text-muted">
           A fine-grained token with <span className="text-ink">Contents: Read and write</span> on{' '}
           <span className="text-ink">{REPO}</span> only. It stays on this device — never in the app's code.
         </div>
@@ -92,13 +92,13 @@ export default function SyncPanel() {
             placeholder="github_pat_…"
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 flex-1 rounded-xl border border-white/10 bg-elevated px-3 py-2 text-sm text-ink outline-none focus:border-accent"
+            className="min-w-0 flex-1 rounded-xl border border-line/10 bg-elevated px-3 py-2 text-sm text-ink outline-none focus:border-accent"
           />
           <button
             onClick={handleSave}
             disabled={saved}
             className="shrink-0 rounded-xl bg-accent px-3 py-2 text-xs font-bold disabled:opacity-40"
-            style={{ color: 'rgb(var(--c-base))' }}
+            style={{ color: 'rgb(var(--c-accent-contrast))' }}
           >
             {saved ? 'Saved' : 'Save'}
           </button>
@@ -121,10 +121,10 @@ export default function SyncPanel() {
             {busy ? '…' : 'Restore'}
           </button>
         </div>
-        {restoreError && <div className="mt-2 text-[11px] text-red-300">{restoreError}</div>}
+        {restoreError && <div className="mt-2 text-xs2 text-red-300">{restoreError}</div>}
       </div>
 
-      <p className="px-1 text-[11px] leading-relaxed text-muted">
+      <p className="px-1 text-xs2 leading-relaxed text-muted">
         Setup is a one-off: build the nightly Shortcut once, and ticking reminders is all you do after that.
         Steps are in <span className="text-ink">docs/reminders-sync.md</span> in the repo.
       </p>

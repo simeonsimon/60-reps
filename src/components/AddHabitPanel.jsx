@@ -98,7 +98,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
               type="button"
               onClick={() => applyTemplate(t)}
               className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-                template === t.id ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
+                template === t.id ? 'border-accent bg-accent-soft text-ink' : 'border-line/5 bg-surface text-muted'
               }`}
             >
               <span>{t.emoji}</span> {t.title}
@@ -108,7 +108,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
             <button
               type="button"
               onClick={onImport}
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-white/15 px-3 py-2 text-sm font-medium text-muted transition-colors active:border-accent active:text-ink"
+              className="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-line/15 px-3 py-2 text-sm font-medium text-muted transition-colors active:border-accent active:text-ink"
             >
               <span>📷</span> Import from Reminders
             </button>
@@ -126,7 +126,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
           }}
           placeholder="e.g. Read 10 pages"
           enterKeyHint="go"
-          className="w-full rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
+          className="w-full rounded-2xl border border-line/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
         />
       </div>
 
@@ -157,7 +157,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
               type="button"
               onClick={() => setType(t.id)}
               className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors ${
-                type === t.id ? 'border-accent bg-accent-soft' : 'border-white/5 bg-surface'
+                type === t.id ? 'border-accent bg-accent-soft' : 'border-line/5 bg-surface'
               }`}
             >
               <div>
@@ -179,7 +179,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
               min="1"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
+              className="w-full rounded-2xl border border-line/10 bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
             />
           </div>
           <div>
@@ -188,7 +188,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
               placeholder="min, pages…"
-              className="w-full rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
+              className="w-full rounded-2xl border border-line/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
             />
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
                 className={`h-10 w-10 rounded-full text-sm font-bold transition-colors ${
                   on ? 'bg-accent text-base' : 'bg-surface text-muted'
                 }`}
-                style={on ? { color: 'rgb(var(--c-base))' } : undefined}
+                style={on ? { color: 'rgb(var(--c-accent-contrast))' } : undefined}
               >
                 {WEEKDAY_SHORT[d]}
               </button>
@@ -230,7 +230,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
               type="button"
               onClick={() => setAnchorId(null)}
               className={`shrink-0 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-                anchorId === null ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
+                anchorId === null ? 'border-accent bg-accent-soft text-ink' : 'border-line/5 bg-surface text-muted'
               }`}
             >
               None
@@ -241,7 +241,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
                 type="button"
                 onClick={() => setAnchorId(h.id)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
-                  anchorId === h.id ? 'border-accent bg-accent-soft text-ink' : 'border-white/5 bg-surface text-muted'
+                  anchorId === h.id ? 'border-accent bg-accent-soft text-ink' : 'border-line/5 bg-surface text-muted'
                 }`}
               >
                 <span>{h.emoji}</span> {h.title.length > 18 ? h.title.slice(0, 18) + '…' : h.title}
@@ -264,7 +264,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
             type="time"
             value={reminderTime}
             onChange={(e) => setReminderTime(e.target.value)}
-            className="rounded-2xl border border-white/10 bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
+            className="rounded-2xl border border-line/10 bg-surface px-4 py-3 text-ink outline-none focus:border-accent"
           />
           {reminderTime && (
             <button type="button" onClick={() => setReminderTime('')} className="text-xs font-medium text-muted underline">
@@ -283,7 +283,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
           type="submit"
           disabled={!canSave}
           className="w-full rounded-2xl bg-accent px-4 py-3.5 text-sm font-bold disabled:opacity-40"
-          style={{ color: 'rgb(var(--c-base))' }}
+          style={{ color: 'rgb(var(--c-accent-contrast))' }}
         >
           Start the climb
         </button>

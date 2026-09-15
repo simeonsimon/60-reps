@@ -2,7 +2,7 @@ import { GOAL } from '../../lib/habits.js'
 
 function scoreChipStyle(score) {
   if (score >= 65) return { background: 'rgb(var(--c-accent) / 0.16)', color: 'rgb(var(--c-accent))' }
-  if (score >= 45) return { background: 'rgba(250, 204, 21, 0.14)', color: '#facc15' }
+  if (score >= 45) return { background: 'rgb(var(--c-star) / 0.14)', color: 'rgb(var(--c-star))' }
   return { background: 'rgb(var(--c-elevated))', color: 'rgb(var(--c-muted))' }
 }
 
@@ -13,13 +13,13 @@ export default function HabitRow({ entry, onOpen }) {
   return (
     <button
       onClick={onOpen}
-      className="w-full rounded-3xl border border-white/5 bg-surface p-4 text-left transition-transform active:scale-[0.99]"
+      className="w-full rounded-3xl border border-line/5 bg-surface p-4 text-left transition-transform active:scale-[0.99]"
     >
       <div className="flex items-center gap-2.5">
         <span className="text-lg">{h.emoji || '⛰️'}</span>
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-ink">{h.title}</span>
         <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+          className="rounded-full px-2 py-0.5 text-2xs font-bold"
           style={scoreChipStyle(entry.score.score)}
         >
           {entry.score.score}
@@ -28,7 +28,7 @@ export default function HabitRow({ entry, onOpen }) {
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-elevated">
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
-      <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted">
+      <div className="mt-1.5 flex items-center gap-3 text-xs2 text-muted">
         <span>
           {Math.min(h.reps, GOAL)}/{GOAL}
           {h.reps > GOAL ? ` (+${h.reps - GOAL})` : ''}
