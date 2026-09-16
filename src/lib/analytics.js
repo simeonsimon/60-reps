@@ -36,7 +36,12 @@ export function analyzeHabit(habit, allHabits = [], now = Date.now()) {
   const compare28 = compareWindows(habit, 28, now)
   const best28 = bestWindow(habit, 28, now)
   const longHeatmapWeeks = pace.ageDays >= 120 ? 53 : null
-  const insights = buildHabitInsights(habit, { pace, wk, parts, fc, streak, longest, w28, rec }, allHabits, now)
+  const insights = buildHabitInsights(
+    habit,
+    { pace, wk, parts, fc, streak, longest, w28, rec, compare28, best28, months },
+    allHabits,
+    now,
+  )
   return {
     pace,
     wk,

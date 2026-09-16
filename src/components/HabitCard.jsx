@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useHabits } from '../store/StoreProvider.jsx'
 import { audio } from '../audio/AudioEngine.js'
 import { useLongPress } from '../hooks/useLongPress.js'
+import { habitHeadline } from '../lib/analytics/insights.js'
+import { HabitHeadline } from './analytics/primitives.jsx'
 import ChargeStage from './ChargeStage.jsx'
 import ProgressRing from './ProgressRing.jsx'
 import { FlameIcon, TrashIcon } from './icons.jsx'
@@ -17,7 +19,7 @@ import {
   daysLabel,
 } from '../lib/habits.js'
 
-export default function HabitCard({ habit, active, onUnlock }) {
+export default function HabitCard({ habit, active, onUnlock, onOpenStats }) {
   const { complete, removeHabit, habits, setActive } = useHabits()
   const progressRef = useRef(0)
   // The stage and the info panel are painted by mutating style through refs, so
@@ -35,6 +37,7 @@ export default function HabitCard({ habit, active, onUnlock }) {
   const restDay = !isScheduledToday(habit)
   const hasSchedule = daysLabel(habit) !== 'Every day'
   const anchor = habit.anchorId ? habits.find((h) => h.id === habit.anchorId) : null
+  const headline = active ? habitHeadline(habit) : null
 
   function paintHold(p) {
     progressRef.current = p
@@ -238,6 +241,11 @@ export default function HabitCard({ habit, active, onUnlock }) {
                 <TrashIcon width={15} height={15} />
               </button>
             </div>
+            <HabitHeadline
+              headline={headline}
+              onClick={onOpenStats ? () => onOpenStats(habit.id) : undefined}
+              className="mt-1.5"
+            />
           </div>
 
           <ProgressRing value={pct} size={76} stroke={7}>

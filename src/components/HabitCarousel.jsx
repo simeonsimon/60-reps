@@ -6,7 +6,7 @@ import HabitCard from './HabitCard.jsx'
 
 // Full-viewport horizontal pager. Drag to swipe; snaps to the nearest card on
 // release based on offset/velocity. No navbar — the cards are the interface.
-export default function HabitCarousel({ onUnlock, onExit }) {
+export default function HabitCarousel({ onUnlock, onExit, onOpenStats }) {
   const { habits, activeIndex, setActive } = useHabits()
   const containerRef = useRef(null)
   const [width, setWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 0))
@@ -59,7 +59,7 @@ export default function HabitCarousel({ onUnlock, onExit }) {
       >
         {habits.map((h, i) => (
           <div key={h.id} style={{ width: width || '100%' }} className="h-full shrink-0">
-            <HabitCard habit={h} active={i === index} onUnlock={onUnlock} />
+            <HabitCard habit={h} active={i === index} onUnlock={onUnlock} onOpenStats={onOpenStats} />
           </div>
         ))}
       </motion.div>

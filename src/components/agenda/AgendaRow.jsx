@@ -1,7 +1,8 @@
 import { memo, useEffect, useState } from 'react'
 import { audio } from '../../audio/AudioEngine.js'
 import { GOAL, completedToday, isScheduledToday, sessionPct } from '../../lib/habits.js'
-import { EmojiTile } from '../analytics/primitives.jsx'
+import { habitHeadline } from '../../lib/analytics/insights.js'
+import { EmojiTile, HabitHeadline } from '../analytics/primitives.jsx'
 
 function AgendaRow({
   habit,
@@ -17,6 +18,7 @@ function AgendaRow({
   const doneToday = completedToday(habit)
   const restDay = !isScheduledToday(habit)
   const waitingForAnchor = !!habit.anchorId && !anchorDone
+  const headline = habitHeadline(habit)
 
   useEffect(() => {
     if (!undoSnapshot) return undefined
@@ -87,6 +89,7 @@ function AgendaRow({
             <span className="truncate text-sm font-bold text-ink">{habit.title}</span>
             <span className="shrink-0 text-xs2 font-semibold text-muted">{habit.reps} / {GOAL}</span>
           </span>
+          <HabitHeadline headline={headline} className="mt-1" />
 
           {(restDay || waitingForAnchor) && (
             <span className="mt-1 flex min-w-0 flex-wrap gap-1">
