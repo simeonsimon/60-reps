@@ -1,10 +1,13 @@
 import { GOAL, currentStreak } from './habits.js'
 import {
   ageDays,
+  bestWindow,
+  compareWindows,
   consistencyScore,
   dayParts,
   forecast,
   longestStreak,
+  monthlySeries,
   paceStats,
   records,
   totalReps,
@@ -29,8 +32,28 @@ export function analyzeHabit(habit, allHabits = [], now = Date.now()) {
   const rec = records(habit, now)
   const score = consistencyScore(habit, now)
   const weekly = weeklySeries(habit, 8, now)
+  const months = monthlySeries(habit, 12, now)
+  const compare28 = compareWindows(habit, 28, now)
+  const best28 = bestWindow(habit, 28, now)
+  const longHeatmapWeeks = pace.ageDays >= 120 ? 53 : null
   const insights = buildHabitInsights(habit, { pace, wk, parts, fc, streak, longest, w28, rec }, allHabits, now)
-  return { pace, wk, parts, fc, streak, longest, w28, rec, score, weekly, insights }
+  return {
+    pace,
+    wk,
+    parts,
+    fc,
+    streak,
+    longest,
+    w28,
+    rec,
+    score,
+    weekly,
+    months,
+    compare28,
+    best28,
+    longHeatmapWeeks,
+    insights,
+  }
 }
 
 // ── Portfolio (all habits) ──────────────────────────────────────────────────
@@ -50,6 +73,7 @@ export function analyzePortfolio(habits, now = Date.now()) {
   const thisWeek = perHabit.reduce((s, p) => s + p.pace.last7, 0)
   const lastWeek = perHabit.reduce((s, p) => s + p.pace.prev7, 0)
   const weekly = weeklySeries(habits, 8, now)
+  const months = monthlySeries(habits, 12, now)
   const insights = buildPortfolioInsights(habits, perHabit, thisWeek, lastWeek, now)
 
   return {
@@ -59,6 +83,7 @@ export function analyzePortfolio(habits, now = Date.now()) {
     thisWeek,
     lastWeek,
     weekly,
+    months,
     perHabit,
     insights: insights.slice(0, 5),
   }

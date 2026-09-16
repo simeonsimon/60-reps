@@ -36,6 +36,53 @@ export function WeeklyBars({ series, unlock, readiness }) {
   )
 }
 
+// Last 12 local calendar months of reps. Months before the habit existed stay
+// visible as quiet hairlines so the horizon fills in without implying misses.
+export function MonthBars({ series, unlock, readiness }) {
+  if (unlock && !unlock.ready) return <LockedStrip unlock={unlock} data={readiness} />
+  if (!series.length) return null
+
+  const max = Math.max(1, ...series.map((month) => month.reps))
+  const partial = series.find((month) => month.isPartial)
+
+  return (
+    <div>
+      <div className="flex items-end gap-1.5" style={{ height: 104 }}>
+        {series.map((month) => {
+          const height = !month.existed ? 1 : month.reps > 0 ? Math.max(8, Math.round((month.reps / max) * 78)) : 3
+          const background = !month.existed
+            ? 'rgb(var(--c-line) / 0.45)'
+            : month.isPartial
+              ? 'rgb(var(--c-accent))'
+              : 'rgb(var(--c-accent) / 0.35)'
+          return (
+            <div
+              key={month.key}
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+              style={{ opacity: month.isPartial ? 0.5 : month.existed ? 1 : 0.4 }}
+            >
+              <span className="text-3xs font-semibold text-muted">{month.existed && month.reps > 0 ? month.reps : ''}</span>
+              <div className="w-full rounded-md" style={{ height, background }} />
+            </div>
+          )
+        })}
+      </div>
+      <div className="mt-1.5 flex gap-1.5 text-center text-3xs text-muted">
+        {series.map((month) => (
+          <span
+            key={month.key}
+            className="min-w-0 flex-1"
+            style={{ opacity: month.isPartial ? 0.5 : month.existed ? 1 : 0.4 }}
+          >
+            {month.label}
+          </span>
+        ))}
+      </div>
+      {partial ? <div className="mt-1 text-right text-2xs text-muted">{partial.daysIn} days in</div> : null}
+    </div>
+  )
+}
+
 // Hit rate per weekday (Mon-first), best/worst highlighted.
 export function WeekdayBars({ wk, unlock, readiness }) {
   if (unlock && !unlock.ready) return <LockedStrip unlock={unlock} data={readiness} />

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { analyzePortfolio } from '../../lib/analytics.js'
 import { MIN_N, readiness as getReadiness } from '../../lib/analytics/metrics.js'
 import { Stat, Section, InsightCard } from './primitives.jsx'
-import { WeeklyBars } from './bars.jsx'
+import { WeeklyBars, MonthBars } from './bars.jsx'
 import HabitRow from './HabitRow.jsx'
 import { unlockTiming } from './ReadinessCard.jsx'
 
@@ -64,6 +64,12 @@ export default function PortfolioAnalytics({ habits, onOpenHabit }) {
       <Section title="Total output" hint="reps per week, all habits">
         <div className="rounded-3xl bg-surface p-4">
           <WeeklyBars series={P.weekly} unlock={momentumGate} />
+        </div>
+      </Section>
+
+      <Section title="The long view" hint="last 12 months">
+        <div className="rounded-3xl bg-surface p-4">
+          <MonthBars series={P.months} />
         </div>
       </Section>
 
