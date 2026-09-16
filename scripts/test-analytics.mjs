@@ -3,12 +3,14 @@ process.env.TZ = 'Europe/Madrid'
 const analytics = await import('../src/lib/analytics.js')
 
 const {
+  MIN_N,
   analyzeHabit,
   dayCompletion,
   forecast,
   longestStreak,
   masteryDate,
   paceStats,
+  readiness,
   consistencyScore,
   weeklySeries,
   windowStats,
@@ -39,6 +41,13 @@ function habit(over = {}) {
   return h
 }
 
+function dayAtOffset(now, offset, hour = 8) {
+  const d = new Date(now)
+  d.setDate(d.getDate() + offset)
+  d.setHours(hour, 0, 0, 0)
+  return d.getTime()
+}
+
 console.log('\nanalytics export surface')
 {
   const originalExports = [
@@ -64,6 +73,7 @@ console.log('\nanalytics export surface')
   ]
   const missing = originalExports.filter((name) => !(name in analytics))
   check('all pre-split exports are present', missing.length === 0, missing)
+  check('readiness API is exported', typeof readiness === 'function' && MIN_N.weekdayPattern.want === 21)
 }
 
 console.log('\nwindowStats')
@@ -250,6 +260,97 @@ console.log('\ndayCompletion')
   const completion = dayCompletion(habits, now, now)
   check('completion excludes off-day and not-yet-created habits', completion.scheduled === 2, completion)
   check('completion reports hit percentage and pending today', completion.hit === 1 && completion.pct === 0.5 && completion.pending, completion)
+}
+
+console.log('\nreadiness')
+{
+  const now = new Date(2026, 8, 16, 12).getTime()
+  const gateIds = ['forecast', 'momentum', 'hitRate28', 'timeOfDay', 'weekdayPattern']
+
+  const newHabit = habit({
+    title: 'One rep, four days old',
+    createdAt: dayAtOffset(now, -3, 12),
+    history: [{ t: dayAtOffset(now, -3), amount: 1 }],
+  })
+  const newState = readiness(newHabit, now)
+  const newGates = Object.fromEntries(newState.unlocks.map((unlock) => [unlock.id, unlock]))
+  check(
+    'brand-new fixture exposes exactly the currently-computable gates',
+    newState.unlocks.map((unlock) => unlock.id).join() === gateIds.join(),
+    newState,
+  )
+  check(
+    'one rep at four days keeps every analytical read locked',
+    newState.unlocks.every((unlock) => unlock.ready === false),
+    newState,
+  )
+  check(
+    'every locked read has a finite best-case ETA',
+    newState.unlocks.every((unlock) => Number.isInteger(unlock.etaDays) && unlock.etaDays >= 0),
+    newState,
+  )
+  check(
+    'brand-new ETAs account for schedule and calendar age',
+    newGates.forecast.etaDays === 1 &&
+      newGates.momentum.etaDays === 7 &&
+      newGates.hitRate28.etaDays === 6 &&
+      newGates.timeOfDay.etaDays === 6 &&
+      newGates.weekdayPattern.etaDays === 17,
+    newState,
+  )
+
+  const halfwayHabit = habit({
+    title: 'Halfway samples',
+    days: [1, 3, 5],
+    createdAt: dayAtOffset(now, -10, 12),
+    history: [-9, -6, -4, 0].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+  })
+  const halfwayState = readiness(halfwayHabit, now)
+  const halfway = Object.fromEntries(halfwayState.unlocks.map((unlock) => [unlock.id, unlock]))
+  check(
+    'halfway fixture reports the actual sample counts for every remaining gate',
+    halfway.momentum.have === 1 && halfway.momentum.want === 2 &&
+      halfway.hitRate28.have === 5 && halfway.hitRate28.want === 10 &&
+      halfway.timeOfDay.have === 4 && halfway.timeOfDay.want === 8 &&
+      halfway.weekdayPattern.have === 11 && halfway.weekdayPattern.want === 21,
+    halfwayState,
+  )
+  check(
+    'halfway fixture keeps only the already-earned forecast ready',
+    halfway.forecast.ready &&
+      ['momentum', 'hitRate28', 'timeOfDay', 'weekdayPattern'].every((id) => !halfway[id].ready),
+    halfwayState,
+  )
+
+  const seasonedHistory = []
+  let extraTuesdays = 0
+  for (let offset = -83; offset <= 0; offset++) {
+    const t = dayAtOffset(now, offset)
+    const weekday = new Date(t).getDay()
+    const regularDay = weekday === 1 || weekday === 3 || weekday === 5
+    const sampledTuesday = weekday === 2 && extraTuesdays < 5
+    if (regularDay || sampledTuesday) {
+      seasonedHistory.push({ t, amount: 1 })
+      if (sampledTuesday) extraTuesdays++
+    }
+  }
+  const seasonedHabit = habit({
+    title: 'Ninety-day habit',
+    createdAt: dayAtOffset(now, -89, 12),
+    history: seasonedHistory,
+  })
+  const seasonedState = readiness(seasonedHabit, now)
+  check(
+    'ninety-day fixture meets all currently-computable gates',
+    seasonedState.totalReps >= 40 && seasonedState.unlocks.every((unlock) => unlock.ready && unlock.etaDays === 0),
+    seasonedState,
+  )
+  const seasonedInsights = analyzeHabit(seasonedHabit, [], now).insights.map((insight) => insight.id)
+  check(
+    'well-populated habit keeps its established forecast and pattern insights',
+    ['forecast', 'weekday-pattern', 'time-of-day'].every((id) => seasonedInsights.includes(id)),
+    seasonedInsights,
+  )
 }
 
 console.log('\ninsights')

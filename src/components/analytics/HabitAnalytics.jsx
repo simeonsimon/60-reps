@@ -3,17 +3,28 @@ import ClimbChart from '../ClimbChart.jsx'
 import Heatmap from '../Heatmap.jsx'
 import { GOAL, isScheduledOn } from '../../lib/habits.js'
 import { analyzeHabit, fmtDate, pctLabel } from '../../lib/analytics.js'
+import { readiness as getReadiness } from '../../lib/analytics/metrics.js'
 import { Stat, Section, InsightCard } from './primitives.jsx'
 import ForecastCard from './ForecastCard.jsx'
 import { WeeklyBars, WeekdayBars, DayPartsBar } from './bars.jsx'
+import ReadinessCard, { LockedStrip, unlockTiming } from './ReadinessCard.jsx'
 
 // The "This habit" tab: switcher chips, vitals, forecast, conclusions, patterns.
 export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
-  const A = useMemo(() => analyzeHabit(habit, habits), [habit, habits])
+  const { A, R } = useMemo(() => {
+    const now = Date.now()
+    return { A: analyzeHabit(habit, habits, now), R: getReadiness(habit, now) }
+  }, [habit, habits])
 
   // The forecast has its own hero card, so keep it out of the conclusions list.
   const conclusions = A.insights.filter((i) => i.id !== 'forecast' && i.id !== 'summit')
   const weekDelta = A.pace.last7 - A.pace.prev7
+  const gates = Object.fromEntries(R.unlocks.map((unlock) => [unlock.id, unlock]))
+  const hitRateLabel = A.w28.spanDays < 28 ? 'Hit rate · since you started' : 'Hit rate · 4 wks'
+  const consistencyReady = gates.hitRate28.ready && gates.momentum.ready
+  const consistencyEta = [gates.hitRate28.etaDays, gates.momentum.etaDays].includes(null)
+    ? null
+    : Math.max(gates.hitRate28.etaDays, gates.momentum.etaDays)
 
   return (
     <>
@@ -42,17 +53,44 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
         <Stat label="Reps banked" value={`${Math.min(habit.reps, GOAL)}/${GOAL}`} sub={habit.reps > GOAL ? `+${habit.reps - GOAL} bonus` : undefined} subTone="up" />
         <Stat label="Streak" value={`${A.streak}d`} sub={A.streak > 0 && A.streak >= A.longest ? 'personal best' : undefined} subTone="up" />
         <Stat label="Best streak" value={`${A.longest}d`} />
-        <Stat label="Hit rate · 4 wks" value={A.w28.rate === null ? '—' : pctLabel(A.w28.rate)} sub={A.w28.scheduled > 0 ? `${A.w28.hit}/${A.w28.scheduled} days` : undefined} />
+        <Stat
+          label={hitRateLabel}
+          value={gates.hitRate28.ready ? pctLabel(A.w28.rate) : '🔒'}
+          sub={
+            gates.hitRate28.ready
+              ? `${A.w28.hit}/${A.w28.scheduled} days`
+              : `${gates.hitRate28.have}/${gates.hitRate28.want} scheduled · ${unlockTiming(gates.hitRate28)}`
+          }
+        />
         <Stat
           label="This week"
           value={A.pace.last7}
-          sub={`${weekDelta > 0 ? '+' : ''}${weekDelta} vs last`}
-          subTone={weekDelta > 0 ? 'up' : weekDelta < 0 ? 'down' : undefined}
+          sub={
+            gates.momentum.ready
+              ? `${weekDelta > 0 ? '+' : ''}${weekDelta} vs last`
+              : `${gates.momentum.have}/${gates.momentum.want} comparison reps · ${unlockTiming(gates.momentum)}`
+          }
+          subTone={gates.momentum.ready ? (weekDelta > 0 ? 'up' : weekDelta < 0 ? 'down' : undefined) : undefined}
         />
-        <Stat label="Consistency" value={A.score.score} sub={A.score.label} subTone={A.score.score >= 65 ? 'up' : A.score.score < 45 ? 'down' : undefined} />
+        <Stat
+          label="Consistency"
+          value={consistencyReady ? A.score.score : '🔒'}
+          sub={
+            consistencyReady
+              ? A.score.label
+              : `needs hit rate + momentum · ${unlockTiming({ ready: false, etaDays: consistencyEta })}`
+          }
+          subTone={consistencyReady ? (A.score.score >= 65 ? 'up' : A.score.score < 45 ? 'down' : undefined) : undefined}
+        />
       </div>
 
-      <ForecastCard habit={habit} fc={A.fc} />
+      {A.fc.done || gates.forecast.ready ? (
+        <ForecastCard habit={habit} fc={A.fc} />
+      ) : (
+        <LockedStrip unlock={gates.forecast} data={R} />
+      )}
+
+      <ReadinessCard data={R} />
 
       <Section title="Conclusions" hint="read from your history">
         <div className="space-y-2.5">
@@ -68,7 +106,7 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
 
       <Section title="Momentum" hint="reps per week">
         <div className="rounded-3xl bg-surface p-4">
-          <WeeklyBars series={A.weekly} />
+          <WeeklyBars series={A.weekly} unlock={gates.momentum} readiness={R} />
         </div>
       </Section>
 
@@ -76,11 +114,11 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
         <div className="space-y-3">
           <div className="rounded-3xl bg-surface p-4">
             <div className="mb-3 text-xs font-semibold text-muted">By weekday</div>
-            <WeekdayBars wk={A.wk} />
+            <WeekdayBars wk={A.wk} unlock={gates.weekdayPattern} readiness={R} />
           </div>
           <div className="rounded-3xl bg-surface p-4">
             <div className="mb-3 text-xs font-semibold text-muted">By time of day</div>
-            <DayPartsBar parts={A.parts} />
+            <DayPartsBar parts={A.parts} unlock={gates.timeOfDay} readiness={R} />
           </div>
         </div>
       </Section>

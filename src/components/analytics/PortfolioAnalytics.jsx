@@ -1,12 +1,32 @@
 import { useMemo } from 'react'
 import { analyzePortfolio } from '../../lib/analytics.js'
+import { MIN_N, readiness as getReadiness } from '../../lib/analytics/metrics.js'
 import { Stat, Section, InsightCard } from './primitives.jsx'
 import { WeeklyBars } from './bars.jsx'
 import HabitRow from './HabitRow.jsx'
+import { unlockTiming } from './ReadinessCard.jsx'
 
 // The "All habits" tab: portfolio vitals, cross-habit conclusions, comparison list.
 export default function PortfolioAnalytics({ habits, onOpenHabit }) {
-  const P = useMemo(() => analyzePortfolio(habits), [habits])
+  const { P, momentumGate } = useMemo(() => {
+    const now = Date.now()
+    const portfolio = analyzePortfolio(habits, now)
+    const habitEtas = habits
+      .map((habit) => getReadiness(habit, now).unlocks.find((unlock) => unlock.id === 'momentum').etaDays)
+      .filter((eta) => eta !== null)
+    const ready = portfolio.lastWeek >= MIN_N.momentum.want
+    return {
+      P: portfolio,
+      momentumGate: {
+        id: 'momentum',
+        label: 'Weekly output trend',
+        ready,
+        have: portfolio.lastWeek,
+        want: MIN_N.momentum.want,
+        etaDays: ready ? 0 : habitEtas.length > 0 ? Math.min(...habitEtas) : null,
+      },
+    }
+  }, [habits])
 
   return (
     <>
@@ -16,8 +36,14 @@ export default function PortfolioAnalytics({ habits, onOpenHabit }) {
         <Stat
           label="This week"
           value={P.thisWeek}
-          sub={`${P.thisWeek - P.lastWeek >= 0 ? '+' : ''}${P.thisWeek - P.lastWeek} vs last`}
-          subTone={P.thisWeek > P.lastWeek ? 'up' : P.thisWeek < P.lastWeek ? 'down' : undefined}
+          sub={
+            momentumGate.ready
+              ? `${P.thisWeek - P.lastWeek >= 0 ? '+' : ''}${P.thisWeek - P.lastWeek} vs last`
+              : `${momentumGate.have}/${momentumGate.want} comparison reps · ${unlockTiming(momentumGate)}`
+          }
+          subTone={
+            momentumGate.ready ? (P.thisWeek > P.lastWeek ? 'up' : P.thisWeek < P.lastWeek ? 'down' : undefined) : undefined
+          }
         />
         <Stat label="Summits reached" value={P.summits} sub={`of ${habits.length} climbs`} />
         <Stat label="Live streaks" value={P.activeStreaks} sub="2+ days running" />
@@ -37,7 +63,7 @@ export default function PortfolioAnalytics({ habits, onOpenHabit }) {
 
       <Section title="Total output" hint="reps per week, all habits">
         <div className="rounded-3xl bg-surface p-4">
-          <WeeklyBars series={P.weekly} />
+          <WeeklyBars series={P.weekly} unlock={momentumGate} />
         </div>
       </Section>
 

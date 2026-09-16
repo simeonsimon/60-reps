@@ -6,6 +6,18 @@ import { GOAL, startOfDay, isScheduledOn, currentStreak, WEEKDAY_LABELS } from '
 
 const DAY = 86400000
 
+// One source of truth for when an analytical read has enough evidence to be
+// useful. Phase 5 will consume the final two thresholds when those metrics land.
+export const MIN_N = {
+  forecast: { metric: 'reps', want: 3, alsoDays: 4 },
+  momentum: { metric: 'prev7Reps', want: 2 },
+  hitRate28: { metric: 'scheduled', want: 10 },
+  timeOfDay: { metric: 'reps', want: 8 },
+  weekdayPattern: { metric: 'days', want: 21 },
+  baseline28: { metric: 'days', want: 42 },
+  monthOverMonth: { metric: 'months', want: 2 },
+}
+
 // ── Date helpers ────────────────────────────────────────────────────────────
 // Day stepping goes through Date#setDate (not ms arithmetic) so DST shifts
 // can't drift the cursor into the wrong day.
@@ -80,6 +92,129 @@ export function ageDays(habit, now = Date.now()) {
 
 export function totalReps(habit) {
   return (habit.history || []).reduce((s, e) => s + e.amount, 0)
+}
+
+const READINESS_ETA_LIMIT = 730
+
+function daysUntilScheduledReps(habit, missing, now) {
+  let left = Math.max(0, Math.ceil(missing))
+  if (left === 0) return 0
+
+  const counts = dayCounts(habit)
+  const today = startOfDay(now)
+  for (let offset = 0; offset <= READINESS_ETA_LIMIT; offset++) {
+    const day = addDays(today, offset)
+    if (isScheduledOn(habit, day) && (counts.get(day) || 0) === 0) left--
+    if (left === 0) return offset
+  }
+  return null
+}
+
+// Projects one rep on each scheduled day without mutating the habit. This is
+// deliberately optimistic: the displayed ETA is a best case the user can beat.
+function daysUntilWindowSample(habit, id, want, now) {
+  const counts = dayCounts(habit)
+  const today = startOfDay(now)
+  const first = firstDay(habit, now)
+
+  for (let offset = 0; offset <= READINESS_ETA_LIMIT; offset++) {
+    const day = addDays(today, offset)
+    if (isScheduledOn(habit, day) && (counts.get(day) || 0) === 0) counts.set(day, 1)
+
+    if (id === 'momentum') {
+      let reps = 0
+      for (const d of eachDay(addDays(day, -13), addDays(day, -7))) reps += counts.get(d) || 0
+      if (reps >= want) return offset
+      continue
+    }
+
+    const from = Math.max(first, addDays(day, -27))
+    let scheduled = 0
+    for (const d of eachDay(from, day)) {
+      const reps = counts.get(d) || 0
+      if (d === day && reps === 0) continue
+      if (isScheduledOn(habit, d)) scheduled++
+    }
+    if (scheduled >= want) return offset
+  }
+
+  return null
+}
+
+// What this habit can and cannot say yet. ETA assumes one rep per scheduled
+// day starting today, so it is an honest best case rather than a prediction.
+export function readiness(habit, now = Date.now()) {
+  const age = ageDays(habit, now)
+  const counts = dayCounts(habit)
+  const active = [...counts.values()].filter((reps) => reps > 0).length
+  const total = totalReps(habit)
+  const pace = paceStats(habit, now)
+  const w28 = windowStats(habit, 28, now)
+
+  const forecastReady = total >= MIN_N.forecast.want && age >= MIN_N.forecast.alsoDays
+  const forecastRepEta = daysUntilScheduledReps(habit, MIN_N.forecast.want - total, now)
+  const forecastEta = forecastReady
+    ? 0
+    : forecastRepEta === null
+      ? null
+      : Math.max(forecastRepEta, MIN_N.forecast.alsoDays - age, 0)
+
+  const momentumReady = pace.prev7 >= MIN_N.momentum.want
+  const hitRateReady = w28.scheduled >= MIN_N.hitRate28.want
+  const timeOfDayReady = total >= MIN_N.timeOfDay.want
+  const weekdayReady = age >= MIN_N.weekdayPattern.want
+
+  const unlocks = [
+    {
+      id: 'forecast',
+      label: 'Summit forecast',
+      ready: forecastReady,
+      have: total,
+      want: MIN_N.forecast.want,
+      etaDays: forecastEta,
+    },
+    {
+      id: 'momentum',
+      label: 'Momentum',
+      ready: momentumReady,
+      have: pace.prev7,
+      want: MIN_N.momentum.want,
+      etaDays: momentumReady
+        ? 0
+        : daysUntilWindowSample(habit, 'momentum', MIN_N.momentum.want, now),
+    },
+    {
+      id: 'hitRate28',
+      label: 'Hit rate',
+      ready: hitRateReady,
+      have: w28.scheduled,
+      want: MIN_N.hitRate28.want,
+      etaDays: hitRateReady
+        ? 0
+        : daysUntilWindowSample(habit, 'hitRate28', MIN_N.hitRate28.want, now),
+    },
+    {
+      id: 'timeOfDay',
+      label: 'Time of day',
+      ready: timeOfDayReady,
+      have: total,
+      want: MIN_N.timeOfDay.want,
+      etaDays: timeOfDayReady
+        ? 0
+        : daysUntilScheduledReps(habit, MIN_N.timeOfDay.want - total, now),
+    },
+    {
+      id: 'weekdayPattern',
+      label: 'Weekday pattern',
+      ready: weekdayReady,
+      have: age,
+      want: MIN_N.weekdayPattern.want,
+      etaDays: weekdayReady ? 0 : MIN_N.weekdayPattern.want - age,
+    },
+  ]
+
+  // baseline28 and monthOverMonth stay in MIN_N until Phase 5 supplies their metrics.
+  return { ageDays: age, activeDays: active, totalReps: total, unlocks }
 }
 
 // ── Hit rate over a trailing window ─────────────────────────────────────────
