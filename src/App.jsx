@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useHabits, useProfile } from './store/StoreProvider.jsx'
 import { useSkin } from './context/SkinContext.jsx'
 import { audio } from './audio/AudioEngine.js'
 import HabitCarousel from './components/HabitCarousel.jsx'
+import AgendaView from './components/agenda/AgendaView.jsx'
 import Sheet from './components/Sheet.jsx'
 import AnalyticsPanel from './components/AnalyticsPanel.jsx'
 import QuestPanel from './components/QuestPanel.jsx'
@@ -34,11 +35,12 @@ function DockButton({ children, label, onClick }) {
 }
 
 export default function App() {
-  const { habits, activeIndex } = useHabits()
+  const { habits, activeIndex, setActive } = useHabits()
   const { profile } = useProfile()
   const { def } = useSkin()
   const [sheet, setSheet] = useState(null)
   const [toasts, setToasts] = useState([])
+  const [view, setView] = useState('agenda')
 
   // Keep the audio engine in sync with the master sound toggle.
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function App() {
   const index = Math.min(activeIndex, Math.max(0, habits.length - 1))
   const active = habits[index]
 
-  function handleUnlock(ids) {
+  const handleUnlock = useCallback((ids) => {
     ids.forEach((id) => {
       const a = ACHIEVEMENT_MAP[id]
       if (!a) return
@@ -65,7 +67,16 @@ export default function App() {
       setToasts((x) => [...x, { id: tid, name: `${a.name} unlocked`, icon: '🏅' }])
       setTimeout(() => setToasts((x) => x.filter((z) => z.id !== tid)), 3200)
     })
-  }
+  }, [])
+
+  const handleFocus = useCallback(
+    (nextIndex) => {
+      setActive(nextIndex)
+      setView('focus')
+    },
+    [setActive],
+  )
+  const handleExitFocus = useCallback(() => setView('agenda'), [])
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-base">
@@ -81,12 +92,25 @@ export default function App() {
         className="absolute inset-x-0 top-0 z-30 flex items-center justify-between px-5"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
       >
-        <div className="flex items-center gap-2 text-ink">
-          <span className="text-accent">
-            <MountainIcon width={20} height={20} />
-          </span>
-          <span className="font-display text-base font-extrabold tracking-tight">60 Reps</span>
-        </div>
+        {view === 'focus' ? (
+          <button
+            type="button"
+            onClick={handleExitFocus}
+            className="flex items-center gap-1.5 rounded-full bg-surface/70 px-3 py-1.5 text-sm font-semibold text-ink backdrop-blur outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none">
+              <path d="m12.5 4.5-5.5 5.5 5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Agenda
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 text-ink">
+            <span className="text-accent">
+              <MountainIcon width={20} height={20} />
+            </span>
+            <span className="font-display text-base font-extrabold tracking-tight">60 Reps</span>
+          </div>
+        )}
         <button
           onClick={() => setSheet('skins')}
           className="flex items-center gap-2 rounded-full bg-surface/70 px-3 py-1.5 text-xs font-medium text-muted backdrop-blur"
@@ -119,7 +143,11 @@ export default function App() {
       {/* Main pager */}
       <main className="relative min-h-0 flex-1">
         {habits.length > 0 ? (
-          <HabitCarousel onUnlock={handleUnlock} />
+          view === 'agenda' ? (
+            <AgendaView onFocus={handleFocus} onUnlock={handleUnlock} />
+          ) : (
+            <HabitCarousel onUnlock={handleUnlock} onExit={handleExitFocus} />
+          )
         ) : (
           <div className="grid h-full place-items-center px-8 text-center">
             <div className="flex flex-col items-center">
