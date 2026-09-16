@@ -176,7 +176,7 @@ body {
   display: none;
 }
 
-/* Disable text selection on the interactive 3D / control surfaces, and the
+/* Disable text selection on the interactive hold / control surfaces, and the
    iOS long-press callout (the hold-to-log gesture would otherwise pop it). */
 .select-none-deep,
 .select-none-deep * {

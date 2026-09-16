@@ -3,6 +3,7 @@ import { useHabits } from '../store/StoreProvider.jsx'
 import { HABIT_TYPES, WEEKDAY_ORDER, WEEKDAY_SHORT } from '../lib/habits.js'
 import { SLOTS, suggestSlotFromTitle } from '../lib/slots.js'
 import { TEMPLATES } from '../data/templates.js'
+import { EmojiTile } from './analytics/primitives.jsx'
 
 const EMOJIS = ['⛰️', '🏀', '🧪', '🏍️', '📚', '🏃', '💧', '🎸', '🧘', '🛏️', '🥗', '✍️', '💪', '⚡', '🃏', '📖']
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6]
@@ -275,11 +276,12 @@ export default function AddHabitPanel({ onClose, onImport }) {
                 key={h.id}
                 type="button"
                 onClick={() => setAnchorId(h.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-3 text-sm font-medium transition-colors ${
                   anchorId === h.id ? 'border-accent bg-accent-soft text-ink' : 'border-line/5 bg-surface text-muted'
                 }`}
               >
-                <span>{h.emoji}</span> {h.title.length > 18 ? h.title.slice(0, 18) + '…' : h.title}
+                <EmojiTile emoji={h.emoji || '⛰️'} size="sm" />
+                {h.title.length > 18 ? h.title.slice(0, 18) + '…' : h.title}
               </button>
             ))}
           </div>

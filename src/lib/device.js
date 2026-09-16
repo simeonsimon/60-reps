@@ -1,4 +1,4 @@
-// Small device/environment helpers shared by the 3D scene, install hint and
+// Small device/environment helpers shared by the install hint and
 // push-notification flow.
 
 export function isTouchDevice() {
@@ -23,10 +23,4 @@ export function isStandalone() {
 
 export function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
-// Renderer pixel-ratio cap: phones get 1.5 (crisp at ~460 ppi, roughly half
-// the GPU work of native 3x), everything else up to 2.
-export function maxDpr() {
-  return isTouchDevice() ? 1.5 : 2
 }

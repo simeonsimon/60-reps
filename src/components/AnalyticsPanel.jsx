@@ -17,7 +17,7 @@ export default function AnalyticsPanel({ habit }) {
   if (!sel) return <p className="py-8 text-center text-sm text-muted">Add a habit to see its analysis.</p>
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* View switch */}
       <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1">
         {[
@@ -40,7 +40,7 @@ export default function AnalyticsPanel({ habit }) {
       </div>
 
       {tab === 'habit' ? (
-        <HabitAnalytics habit={sel} habits={habits} accent={def.palette.accent} onSelect={setSelId} />
+        <HabitAnalytics habit={sel} habits={habits} accent={def.accentHex} onSelect={setSelId} />
       ) : (
         <PortfolioAnalytics
           habits={habits}

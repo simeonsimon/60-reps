@@ -89,14 +89,9 @@ export default function SettingsPanel() {
       {/* Audio */}
       <div>
         <h4 className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">Audio</h4>
-        <div className="space-y-2">
-          <Row label="Sound effects" hint="Synthesized premium SFX">
-            <Toggle checked={profile.sound} onChange={(v) => setProfile({ sound: v })} />
-          </Row>
-          <Row label="Play when silenced" hint="Override the device's mute switch">
-            <Toggle checked={profile.overrideMute} onChange={(v) => setProfile({ overrideMute: v })} />
-          </Row>
-        </div>
+        <Row label="Sound effects" hint="Synthesized premium SFX">
+          <Toggle checked={profile.sound} onChange={(v) => setProfile({ sound: v })} />
+        </Row>
       </div>
 
       {/* Danger zone */}

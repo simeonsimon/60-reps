@@ -92,7 +92,7 @@ export default function App() {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 transition-opacity duration-700"
-        style={{ background: 'radial-gradient(120% 75% at 50% -12%, rgb(var(--c-accent) / 0.16), transparent 60%)' }}
+        style={{ background: 'radial-gradient(105% 62% at 50% -12%, rgb(var(--c-accent) / 0.1), transparent 58%)' }}
       />
 
       {/* Top bar (minimal, floating) */}
@@ -203,7 +203,7 @@ export default function App() {
             ))}
           </div>
         )}
-        <div className="mx-auto flex max-w-sm items-center justify-around rounded-full border border-line/5 bg-surface/80 px-2 py-1.5 shadow-card backdrop-blur-xl">
+        <div className="mx-auto flex max-w-sm items-center justify-around rounded-full border border-line/20 bg-surface/80 px-2 py-1.5 backdrop-blur-xl">
           <DockButton label="Quest book" onClick={() => setSheet('quest')}>
             <BookIcon />
           </DockButton>
