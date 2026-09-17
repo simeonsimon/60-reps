@@ -21,7 +21,7 @@ export default function QuestPanel({ habit }) {
 
       <div className="space-y-3">
         {unlocked.map((c) => (
-          <article key={c.index} className="animate-fade-up rounded-3xl border border-white/5 bg-surface p-4">
+          <article key={c.index} className="animate-fade-up rounded-3xl border border-line/5 bg-surface p-4">
             <h4 className="mb-1 font-display text-sm font-bold text-accent">{c.title}</h4>
             <p className="text-sm leading-relaxed text-ink/90">{c.text}</p>
           </article>
@@ -29,7 +29,7 @@ export default function QuestPanel({ habit }) {
       </div>
 
       {next ? (
-        <div className="rounded-3xl border border-dashed border-white/10 bg-surface/40 p-4 text-center">
+        <div className="rounded-3xl border border-dashed border-line/10 bg-surface/40 p-4 text-center">
           <div className="text-sm font-semibold text-muted">🔒 {next.title}</div>
           <div className="mt-1 text-xs text-muted">
             Unlocks at {next.unlockAtReps} reps — {next.unlockAtReps - habit.reps} to go

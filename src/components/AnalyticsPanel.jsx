@@ -30,7 +30,7 @@ export default function AnalyticsPanel({ habit }) {
             className="rounded-full px-3 py-2 text-sm font-semibold transition-colors"
             style={
               tab === id
-                ? { background: 'rgb(var(--c-accent))', color: 'rgb(var(--c-base))' }
+                ? { background: 'rgb(var(--c-accent))', color: 'rgb(var(--c-accent-contrast))' }
                 : { color: 'rgb(var(--c-muted))' }
             }
           >

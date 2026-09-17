@@ -13,7 +13,7 @@ export function WeeklyBars({ series }) {
           const h = b.reps > 0 ? Math.max(8, Math.round((b.reps / max) * 78)) : 3
           return (
             <div key={b.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-              <span className="text-[9px] font-semibold text-muted">{b.reps > 0 ? b.reps : ''}</span>
+              <span className="text-3xs font-semibold text-muted">{b.reps > 0 ? b.reps : ''}</span>
               <div
                 className="w-full rounded-md transition-all"
                 style={{
@@ -25,7 +25,7 @@ export function WeeklyBars({ series }) {
           )
         })}
       </div>
-      <div className="mt-1.5 flex justify-between text-[10px] text-muted">
+      <div className="mt-1.5 flex justify-between text-2xs text-muted">
         <span>{fmtDate(series[0].start)}</span>
         <span>this week</span>
       </div>
@@ -50,22 +50,22 @@ export function WeekdayBars({ wk }) {
             : isBest
               ? 'rgb(var(--c-accent))'
               : isWorst
-                ? '#fb923c'
+                ? 'rgb(var(--c-warn))'
                 : 'rgb(var(--c-accent) / 0.4)'
           return (
             <div key={wd} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-              <span className="text-[9px] font-semibold text-muted">
+              <span className="text-3xs font-semibold text-muted">
                 {off ? '💤' : r.rate !== null ? Math.round(rate * 100) : '·'}
               </span>
               <div className="w-full rounded-md" style={{ height: h, background: bg, opacity: off ? 0.5 : 1 }} />
-              <span className={`text-[10px] ${isBest ? 'font-bold text-accent' : 'text-muted'}`}>
+              <span className={`text-2xs ${isBest ? 'font-bold text-accent' : 'text-muted'}`}>
                 {WEEKDAY_SHORT[wd]}
               </span>
             </div>
           )
         })}
       </div>
-      <p className="mt-2 text-[11px] leading-relaxed text-muted">
+      <p className="mt-2 text-xs2 leading-relaxed text-muted">
         {wk.best && wk.worst && wk.best.wd !== wk.worst.wd
           ? `Hit rate per weekday, last 12 weeks — strongest on ${wk.best.label} (${pctLabel(wk.best.rate)}), weakest on ${wk.worst.label} (${pctLabel(wk.worst.rate)}).`
           : 'Hit rate per weekday over the last 12 weeks. 💤 marks rest days.'}

@@ -103,7 +103,7 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
           </rect>
         ))}
       </svg>
-      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-muted">
+      <div className="mt-2 flex items-center gap-1.5 text-2xs text-muted">
         <span className="mr-auto">{activeDays} active day{activeDays === 1 ? '' : 's'} in 17 weeks</span>
         <span>Less</span>
         {[0, 0.35, 0.6, 1].map((f) => (

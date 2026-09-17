@@ -133,7 +133,7 @@ export default function App() {
               <button
                 onClick={() => setSheet('add')}
                 className="mt-6 rounded-full bg-accent px-7 py-3 text-sm font-bold shadow-glow transition-transform active:scale-95"
-                style={{ color: 'rgb(var(--c-base))' }}
+                style={{ color: 'rgb(var(--c-accent-contrast))' }}
               >
                 Start your first climb
               </button>
@@ -167,7 +167,7 @@ export default function App() {
             ))}
           </div>
         )}
-        <div className="mx-auto flex max-w-sm items-center justify-around rounded-full border border-white/5 bg-surface/80 px-2 py-1.5 shadow-card backdrop-blur-xl">
+        <div className="mx-auto flex max-w-sm items-center justify-around rounded-full border border-line/5 bg-surface/80 px-2 py-1.5 shadow-card backdrop-blur-xl">
           <DockButton label="Quest book" onClick={() => setSheet('quest')}>
             <BookIcon />
           </DockButton>
@@ -178,7 +178,7 @@ export default function App() {
             onClick={() => setSheet('add')}
             aria-label="Add habit"
             className="grid h-12 w-12 place-items-center rounded-full bg-accent shadow-glow transition-transform active:scale-95"
-            style={{ color: 'rgb(var(--c-base))' }}
+            style={{ color: 'rgb(var(--c-accent-contrast))' }}
           >
             <PlusIcon width={24} height={24} />
           </button>

@@ -97,7 +97,7 @@ export default function Sheet({ open, onClose, title, children }) {
           >
             <motion.div
               style={{ y, maxHeight: kb ? `${window.innerHeight - kb - 10}px` : undefined }}
-              className="sheet-max-h flex flex-col rounded-t-5xl border-t border-white/10 bg-base shadow-card"
+              className="sheet-max-h flex flex-col rounded-t-5xl border-t border-line/10 bg-base shadow-card"
             >
               {/* Drag handle: grab bar + header. touch-action none here (and
                   only here) so the dismiss gesture wins over native panning. */}
