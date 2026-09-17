@@ -94,7 +94,8 @@ export function freshProfile() {
     premium: true, // showcase build — premium features visible; toggle in Settings
     skin: 'normal',
     sound: true,
-    overrideMute: false, // "Super! Boring" override of system mute
+    pushSubscription: null, // PushSubscription JSON saved after notification setup
+    lastSyncHash: null, // hash of the last reminder payload submitted for cloud sync
     achievements: {}, // { [id]: unlockedAt }
     stats: { totalTaps: 0 },
     syncedTicks: {}, // { "<YYYY-MM-DD>|<habitId>": ticksApplied } — see lib/remindersSync.js

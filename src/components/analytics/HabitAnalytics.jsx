@@ -4,7 +4,7 @@ import Heatmap from '../Heatmap.jsx'
 import { GOAL, isScheduledOn } from '../../lib/habits.js'
 import { analyzeHabit, fmtDate, pctLabel } from '../../lib/analytics.js'
 import { readiness as getReadiness } from '../../lib/analytics/metrics.js'
-import { Stat, Section, InsightCard } from './primitives.jsx'
+import { EmojiTile, Stat, Section, InsightCard } from './primitives.jsx'
 import ForecastCard from './ForecastCard.jsx'
 import { WeeklyBars, MonthBars, WeekdayBars, DayPartsBar } from './bars.jsx'
 import ReadinessCard, { LockedStrip, unlockTiming } from './ReadinessCard.jsx'
@@ -36,11 +36,11 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
               <button
                 key={h.id}
                 onClick={() => onSelect(h.id)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border py-1 pl-1 pr-3 text-xs font-semibold transition-colors ${
                   on ? 'border-accent bg-accent-soft text-accent' : 'border-line/5 bg-surface text-muted'
                 }`}
               >
-                <span>{h.emoji || '⛰️'}</span>
+                <EmojiTile emoji={h.emoji || '⛰️'} size="sm" />
                 <span className="max-w-[8.5rem] truncate">{h.title}</span>
               </button>
             )

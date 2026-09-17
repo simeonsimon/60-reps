@@ -1,4 +1,5 @@
 import { GOAL } from '../../lib/habits.js'
+import { EmojiTile } from './primitives.jsx'
 
 function scoreChipStyle(score) {
   if (score >= 65) return { background: 'rgb(var(--c-accent) / 0.16)', color: 'rgb(var(--c-accent))' }
@@ -16,7 +17,7 @@ export default function HabitRow({ entry, onOpen }) {
       className="w-full rounded-3xl border border-line/5 bg-surface p-4 text-left transition-transform active:scale-[0.99]"
     >
       <div className="flex items-center gap-2.5">
-        <span className="text-lg">{h.emoji || '⛰️'}</span>
+        <EmojiTile emoji={h.emoji || '⛰️'} />
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-ink">{h.title}</span>
         <span
           className="rounded-full px-2 py-0.5 text-2xs font-bold"
