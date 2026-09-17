@@ -1,5 +1,5 @@
 import { GOAL, startOfDay, isScheduledOn, WEEKDAY_LABELS } from '../habits.js'
-import { addDays, ageDays, consistencyScore, fmtDate, pctLabel } from './metrics.js'
+import { MIN_N, addDays, ageDays, consistencyScore, fmtDate, pctLabel, readiness } from './metrics.js'
 
 // ── Conclusions engine ──────────────────────────────────────────────────────
 // Turns the numbers above into short written conclusions. Every sentence must
@@ -15,17 +15,18 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
 
   const scheduledLabel = habit.days && habit.days.length > 0 && habit.days.length < 7 ? 'scheduled day' : 'day'
 
-  // Not enough signal yet → say so honestly instead of over-reading noise.
-  if (pace.totalReps < 3 || pace.ageDays < 4) {
+  // Not enough signal yet → name the first trustworthy pattern and its horizon.
+  if (pace.totalReps < MIN_N.forecast.want || pace.ageDays < MIN_N.forecast.alsoDays) {
+    const state = readiness(habit, now)
+    const weekdayGate = state.unlocks.find((unlock) => unlock.id === 'weekdayPattern')
+    const dayLabel = pace.ageDays === 1 ? 'day' : 'days'
+    const etaLabel = weekdayGate.etaDays === 1 ? 'day' : 'days'
     add(100, {
       id: 'warming-up',
       tone: 'info',
       icon: '🌱',
-      title: 'Still warming up',
-      text:
-        pace.totalReps === 0
-          ? 'Nothing logged yet — hold to bank the first rep and the analysis starts reading your patterns.'
-          : `Only ${pace.totalReps} rep${pace.totalReps === 1 ? '' : 's'} logged so far — the analysis sharpens after a few more days of history.`,
+      title: 'Building a baseline',
+      text: `${pace.ageDays} ${dayLabel} of history. Your weekday pattern reads at ${MIN_N.weekdayPattern.want} days — about ${weekdayGate.etaDays} ${etaLabel} away.`,
     })
   }
 
@@ -41,7 +42,12 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
   }
 
   // Forecast.
-  if (!fc.done && !fc.stalled && pace.totalReps >= 3) {
+  if (
+    !fc.done &&
+    !fc.stalled &&
+    pace.totalReps >= MIN_N.forecast.want &&
+    pace.ageDays >= MIN_N.forecast.alsoDays
+  ) {
     add(90, {
       id: 'forecast',
       tone: 'up',
@@ -63,7 +69,7 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
   }
 
   // Momentum swing (needs a real base to compare against).
-  if (pace.prev7 >= 2 && Math.abs(pace.momentum) >= 0.25) {
+  if (pace.prev7 >= MIN_N.momentum.want && Math.abs(pace.momentum) >= 0.25) {
     const upSwing = pace.momentum > 0
     add(80, {
       id: 'momentum',
@@ -90,7 +96,13 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
   }
 
   // Weekday pattern: a strong day and a weak day, both with enough samples.
-  if (wk.best && wk.worst && wk.best.wd !== wk.worst.wd && wk.best.rate - wk.worst.rate >= 0.35) {
+  if (
+    pace.ageDays >= MIN_N.weekdayPattern.want &&
+    wk.best &&
+    wk.worst &&
+    wk.best.wd !== wk.worst.wd &&
+    wk.best.rate - wk.worst.rate >= 0.35
+  ) {
     add(70, {
       id: 'weekday-pattern',
       tone: 'info',
@@ -102,6 +114,7 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
 
   // Weekend vs weekday split.
   if (
+    pace.ageDays >= MIN_N.weekdayPattern.want &&
     wk.weekendRate !== null &&
     wk.weekdayRate !== null &&
     Math.abs(wk.weekdayRate - wk.weekendRate) >= 0.3 &&
@@ -120,7 +133,7 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
   }
 
   // Time-of-day signature.
-  if (parts.total >= 8 && parts.top && parts.top.share >= 0.55) {
+  if (parts.total >= MIN_N.timeOfDay.want && parts.top && parts.top.share >= 0.55) {
     const partName = parts.top.label.toLowerCase()
     add(60, {
       id: 'time-of-day',
@@ -154,7 +167,7 @@ export function buildHabitInsights(habit, ctx, allHabits, now) {
   }
 
   // 28-day reliability read.
-  if (w28.scheduled >= 10 && w28.rate !== null) {
+  if (w28.scheduled >= MIN_N.hitRate28.want && w28.rate !== null) {
     if (w28.rate >= 0.8) {
       add(45, {
         id: 'reliable',

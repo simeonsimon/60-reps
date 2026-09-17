@@ -1,9 +1,12 @@
 // Hand-rolled bar visualizations for the analytics views.
 import { WEEKDAY_ORDER, WEEKDAY_SHORT } from '../../lib/habits.js'
 import { fmtDate, pctLabel } from '../../lib/analytics.js'
+import { LockedStrip } from './ReadinessCard.jsx'
 
 // Last 8 Monday-aligned weeks of reps.
-export function WeeklyBars({ series }) {
+export function WeeklyBars({ series, unlock, readiness }) {
+  if (unlock && !unlock.ready) return <LockedStrip unlock={unlock} data={readiness} />
+
   const max = Math.max(1, ...series.map((b) => b.reps))
   return (
     <div>
@@ -34,7 +37,9 @@ export function WeeklyBars({ series }) {
 }
 
 // Hit rate per weekday (Mon-first), best/worst highlighted.
-export function WeekdayBars({ wk }) {
+export function WeekdayBars({ wk, unlock, readiness }) {
+  if (unlock && !unlock.ready) return <LockedStrip unlock={unlock} data={readiness} />
+
   return (
     <div>
       <div className="flex items-end gap-1.5" style={{ height: 112 }}>
@@ -75,7 +80,9 @@ export function WeekdayBars({ wk }) {
 }
 
 // Share of reps by time of day.
-export function DayPartsBar({ parts }) {
+export function DayPartsBar({ parts, unlock, readiness }) {
+  if (unlock && !unlock.ready) return <LockedStrip unlock={unlock} data={readiness} />
+
   if (!parts.total) {
     return <p className="text-xs text-muted">Log a few reps to see when this habit actually happens.</p>
   }
