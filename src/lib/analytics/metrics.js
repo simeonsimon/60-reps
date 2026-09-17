@@ -7,7 +7,7 @@ import { GOAL, startOfDay, isScheduledOn, currentStreak, WEEKDAY_LABELS } from '
 const DAY = 86400000
 
 // One source of truth for when an analytical read has enough evidence to be
-// useful. Phase 5 will consume the final two thresholds when those metrics land.
+// useful. Every analytics gate below is derived from this table.
 export const MIN_N = {
   forecast: { metric: 'reps', want: 3, alsoDays: 4 },
   momentum: { metric: 'prev7Reps', want: 2 },
@@ -150,6 +150,8 @@ export function readiness(habit, now = Date.now()) {
   const total = totalReps(habit)
   const pace = paceStats(habit, now)
   const w28 = windowStats(habit, 28, now)
+  const comparison = compareWindows(habit, 28, now)
+  const monthBuckets = monthlySeries(habit, MIN_N.monthOverMonth.want, now)
 
   const forecastReady = total >= MIN_N.forecast.want && age >= MIN_N.forecast.alsoDays
   const forecastRepEta = daysUntilScheduledReps(habit, MIN_N.forecast.want - total, now)
@@ -163,6 +165,9 @@ export function readiness(habit, now = Date.now()) {
   const hitRateReady = w28.scheduled >= MIN_N.hitRate28.want
   const timeOfDayReady = total >= MIN_N.timeOfDay.want
   const weekdayReady = age >= MIN_N.weekdayPattern.want
+  const baselineReady = comparison.enoughHistory
+  const monthsHave = monthBuckets.filter((month) => month.existed).length
+  const monthOverMonthReady = monthsHave >= MIN_N.monthOverMonth.want
 
   const unlocks = [
     {
@@ -211,9 +216,26 @@ export function readiness(habit, now = Date.now()) {
       want: MIN_N.weekdayPattern.want,
       etaDays: weekdayReady ? 0 : MIN_N.weekdayPattern.want - age,
     },
+    {
+      id: 'baseline28',
+      label: '28-day comparison',
+      ready: baselineReady,
+      have: age,
+      want: MIN_N.baseline28.want,
+      etaDays: baselineReady ? 0 : MIN_N.baseline28.want - age,
+    },
+    {
+      id: 'monthOverMonth',
+      label: 'Monthly view',
+      ready: monthOverMonthReady,
+      have: monthsHave,
+      want: MIN_N.monthOverMonth.want,
+      etaDays: monthOverMonthReady
+        ? 0
+        : calendarDayDistance(startOfDay(now), addMonths(startOfMonth(now), MIN_N.monthOverMonth.want - monthsHave)),
+    },
   ]
 
-  // baseline28 and monthOverMonth stay in MIN_N until Phase 5 supplies their metrics.
   return { ageDays: age, activeDays: active, totalReps: total, unlocks }
 }
 
@@ -223,20 +245,27 @@ export function readiness(habit, now = Date.now()) {
 // over yet — no guilt at 8am).
 
 export function windowStats(habit, days, now = Date.now()) {
-  const counts = dayCounts(habit)
   const today = startOfDay(now)
   const from = Math.max(firstDay(habit, now), addDays(today, -(days - 1)))
+  return windowStatsRange(habit, from, today)
+}
+
+export function windowStatsRange(habit, fromMs, toMs, opts = { pendingToday: true }) {
+  const counts = dayCounts(habit)
+  const from = Math.max(startOfDay(fromMs), firstDay(habit, toMs))
+  const to = startOfDay(toMs)
+  const pendingToday = opts?.pendingToday ?? true
   let scheduled = 0
   let hit = 0
   let reps = 0
   let activeDays = 0
   let spanDays = 0
-  for (const d of eachDay(from, today)) {
+  for (const d of eachDay(from, to)) {
     spanDays++
     const c = counts.get(d) || 0
     reps += c
     if (c > 0) activeDays++
-    if (d === today && c === 0) continue // pending, not a miss yet
+    if (pendingToday && d === to && c === 0) continue
     if (isScheduledOn(habit, d)) {
       scheduled++
       if (c > 0) hit++
@@ -400,6 +429,128 @@ export function weeklySeries(habitOrHabits, weeks = 8, now = Date.now()) {
     }
   }
   return buckets
+}
+
+function startOfMonth(ms) {
+  const d = new Date(ms)
+  d.setDate(1)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+function addMonths(monthMs, n) {
+  const d = new Date(monthMs)
+  d.setDate(1)
+  d.setMonth(d.getMonth() + n)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+function calendarDayDistance(fromMs, toMs) {
+  let days = 0
+  for (const _day of eachDay(addDays(fromMs, 1), toMs)) days++
+  return days
+}
+
+// Local calendar-month totals, oldest to newest. Portfolio buckets deliberately
+// omit adherence math: scheduled-day rates only have a clear meaning per habit.
+export function monthlySeries(habitOrHabits, months = 12, now = Date.now()) {
+  const list = Array.isArray(habitOrHabits) ? habitOrHabits : [habitOrHabits]
+  const portfolio = Array.isArray(habitOrHabits)
+  const count = Math.max(0, Math.floor(months))
+  if (count === 0) return []
+
+  const today = startOfDay(now)
+  const currentMonth = startOfMonth(today)
+  const starts = list.map((habit) => firstDay(habit, now))
+  const earliestStart = starts.length > 0 ? Math.min(...starts) : null
+
+  return Array.from({ length: count }, (_, i) => {
+    const start = addMonths(currentMonth, -(count - 1 - i))
+    const next = addMonths(start, 1)
+    const end = addDays(next, -1)
+    const rangeEnd = Math.min(end, today)
+    const existed = starts.some((first) => first <= rangeEnd)
+    const startDate = new Date(start)
+    const year = startDate.getFullYear()
+    const month = startDate.getMonth()
+    const base = {
+      key: `${year}-${String(month + 1).padStart(2, '0')}`,
+      start,
+      label: startDate.toLocaleDateString(undefined, { month: 'short' }),
+      year,
+      reps: 0,
+      activeDays: 0,
+      scheduled: portfolio ? null : 0,
+      hit: portfolio ? null : 0,
+      rate: null,
+      isPartial: start === currentMonth,
+      existed,
+      daysIn: existed ? calendarDayDistance(Math.max(start, earliestStart), rangeEnd) + 1 : 0,
+    }
+
+    if (!existed) return base
+
+    if (portfolio) {
+      for (let h = 0; h < list.length; h++) {
+        if (starts[h] > rangeEnd) continue
+        const stats = windowStatsRange(list[h], start, rangeEnd, { pendingToday: start === currentMonth })
+        base.reps += stats.reps
+        base.activeDays += stats.activeDays
+      }
+      return base
+    }
+
+    const stats = windowStatsRange(list[0], start, rangeEnd, { pendingToday: start === currentMonth })
+    return {
+      ...base,
+      reps: stats.reps,
+      activeDays: stats.activeDays,
+      scheduled: stats.scheduled,
+      hit: stats.hit,
+      rate: stats.rate,
+      daysIn: stats.spanDays,
+    }
+  })
+}
+
+// Compare the trailing window with the equally sized window immediately before
+// it. A 42-day minimum gives the prior window at least half a sample.
+export function compareWindows(habit, days = 28, now = Date.now()) {
+  const today = startOfDay(now)
+  const current = windowStatsRange(habit, addDays(today, -(days - 1)), today)
+  const prior = windowStatsRange(habit, addDays(today, -(days * 2 - 1)), addDays(today, -days), {
+    pendingToday: false,
+  })
+  const repsDelta = current.reps - prior.reps
+  const rateDelta = (current.rate ?? 0) - (prior.rate ?? 0)
+  const rateIsFlat = Math.abs(rateDelta) < 0.05
+  const direction = rateIsFlat && repsDelta === 0 ? 'flat' : rateDelta >= 0.05 || (rateIsFlat && repsDelta > 0) ? 'up' : 'down'
+
+  return {
+    current,
+    prior,
+    repsDelta,
+    rateDelta,
+    direction,
+    enoughHistory: ageDays(habit, now) >= days * 1.5,
+  }
+}
+
+// Best complete sliding window, with equal totals resolved toward the most
+// recent window. Rate follows the same scheduled-day rules as windowStats().
+export function bestWindow(habit, days = 28, now = Date.now()) {
+  if (ageDays(habit, now) < days) return null
+
+  const today = startOfDay(now)
+  const firstEnd = addDays(firstDay(habit, now), days - 1)
+  let best = null
+  for (const end of eachDay(firstEnd, today)) {
+    const start = addDays(end, -(days - 1))
+    const stats = windowStatsRange(habit, start, end, { pendingToday: end === today })
+    if (!best || stats.reps >= best.reps) best = { start, end, reps: stats.reps, rate: stats.rate }
+  }
+  return best
 }
 
 // ── Forecast ────────────────────────────────────────────────────────────────

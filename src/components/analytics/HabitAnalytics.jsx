@@ -6,7 +6,7 @@ import { analyzeHabit, fmtDate, pctLabel } from '../../lib/analytics.js'
 import { readiness as getReadiness } from '../../lib/analytics/metrics.js'
 import { Stat, Section, InsightCard } from './primitives.jsx'
 import ForecastCard from './ForecastCard.jsx'
-import { WeeklyBars, WeekdayBars, DayPartsBar } from './bars.jsx'
+import { WeeklyBars, MonthBars, WeekdayBars, DayPartsBar } from './bars.jsx'
 import ReadinessCard, { LockedStrip, unlockTiming } from './ReadinessCard.jsx'
 
 // The "This habit" tab: switcher chips, vitals, forecast, conclusions, patterns.
@@ -89,6 +89,50 @@ export default function HabitAnalytics({ habit, habits, accent, onSelect }) {
       ) : (
         <LockedStrip unlock={gates.forecast} data={R} />
       )}
+
+      <Section title="The long view" hint="last 12 months">
+        <div className="space-y-3">
+          <div className="rounded-3xl bg-surface p-4">
+            <MonthBars series={A.months} unlock={gates.monthOverMonth} readiness={R} />
+          </div>
+
+          {gates.baseline28.ready ? (
+            <div className="grid grid-cols-3 gap-2">
+              <Stat
+                label="This month"
+                value={A.compare28.current.reps}
+                sub={A.compare28.current.rate === null ? 'no scheduled days' : `${pctLabel(A.compare28.current.rate)} hit rate`}
+                subTone={A.compare28.direction === 'up' ? 'up' : A.compare28.direction === 'down' ? 'down' : undefined}
+              />
+              <Stat
+                label="Last month"
+                value={A.compare28.prior.reps}
+                sub={A.compare28.prior.rate === null ? 'no scheduled days' : `${pctLabel(A.compare28.prior.rate)} hit rate`}
+              />
+              <Stat
+                label="Best 28 days"
+                value={A.best28 ? `${A.best28.reps} reps` : '—'}
+                sub={A.best28 ? `${fmtDate(A.best28.start)} – ${fmtDate(A.best28.end)}` : undefined}
+                subTone="up"
+              />
+            </div>
+          ) : (
+            <LockedStrip unlock={gates.baseline28} data={R} />
+          )}
+
+          {A.longHeatmapWeeks ? (
+            <div className="rounded-3xl bg-surface p-4">
+              <div className="mb-3 text-xs font-semibold text-muted">Year consistency</div>
+              <Heatmap
+                events={habit.history}
+                accent={accent}
+                isScheduled={(d) => isScheduledOn(habit, d)}
+                weeks={A.longHeatmapWeeks}
+              />
+            </div>
+          ) : null}
+        </div>
+      </Section>
 
       <ReadinessCard data={R} />
 

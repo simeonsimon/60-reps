@@ -12,6 +12,8 @@ export function unlockRequirement(unlock, data) {
   if (unlock.id === 'hitRate28') return `needs ${unlock.want} scheduled days`
   if (unlock.id === 'timeOfDay') return `needs ${unlock.want} reps`
   if (unlock.id === 'weekdayPattern') return `needs ${unlock.want} days of history`
+  if (unlock.id === 'baseline28') return `needs ${unlock.want} days of history`
+  if (unlock.id === 'monthOverMonth') return `needs ${unlock.want} calendar months`
   return `needs ${unlock.want} samples`
 }
 

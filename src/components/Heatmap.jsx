@@ -10,7 +10,7 @@ const TOP = 13 // gutter for month labels
 // GitHub-style contribution calendar built from completion events.
 // `isScheduled(dateMs)` (optional) marks which days the habit runs on; empty
 // off-days render nearly invisible so rest days never read as misses.
-export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }) {
+export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled, weeks = WEEKS }) {
   const counts = {}
   let max = 1
   for (const e of events) {
@@ -21,10 +21,10 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
 
   const today = startOfDay(Date.now())
   const todayWeekday = new Date(today).getDay() // 0 = Sun
-  const start = today - ((WEEKS - 1) * 7 + todayWeekday) * DAY
+  const start = today - ((weeks - 1) * 7 + todayWeekday) * DAY
 
   const cells = []
-  for (let i = 0; i < WEEKS * 7; i++) {
+  for (let i = 0; i < weeks * 7; i++) {
     const date = start + i * DAY
     if (date > today) continue
     const col = Math.floor(i / 7)
@@ -38,7 +38,7 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
   const monthLabels = []
   let prevMonth = -1
   let lastLabelCol = -10
-  for (let col = 0; col < WEEKS; col++) {
+  for (let col = 0; col < weeks; col++) {
     const d = new Date(start + col * 7 * DAY)
     const m = d.getMonth()
     if (m !== prevMonth) {
@@ -54,7 +54,7 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
   }
 
   const activeDays = cells.filter((c) => c.count > 0).length
-  const w = LEFT + WEEKS * (CELL + GAP)
+  const w = LEFT + weeks * (CELL + GAP)
   const h = TOP + 7 * (CELL + GAP)
 
   const fillFor = (count, date) => {
@@ -104,7 +104,7 @@ export default function Heatmap({ events = [], accent = '#7aa2ff', isScheduled }
         ))}
       </svg>
       <div className="mt-2 flex items-center gap-1.5 text-2xs text-muted">
-        <span className="mr-auto">{activeDays} active day{activeDays === 1 ? '' : 's'} in 17 weeks</span>
+        <span className="mr-auto">{activeDays} active day{activeDays === 1 ? '' : 's'} in {weeks} weeks</span>
         <span>Less</span>
         {[0, 0.35, 0.6, 1].map((f) => (
           <span

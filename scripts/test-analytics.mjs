@@ -5,10 +5,13 @@ const analytics = await import('../src/lib/analytics.js')
 const {
   MIN_N,
   analyzeHabit,
+  bestWindow,
+  compareWindows,
   dayCompletion,
   forecast,
   longestStreak,
   masteryDate,
+  monthlySeries,
   paceStats,
   readiness,
   consistencyScore,
@@ -74,6 +77,13 @@ console.log('\nanalytics export surface')
   const missing = originalExports.filter((name) => !(name in analytics))
   check('all pre-split exports are present', missing.length === 0, missing)
   check('readiness API is exported', typeof readiness === 'function' && MIN_N.weekdayPattern.want === 21)
+  check(
+    'long-view APIs are exported',
+    typeof monthlySeries === 'function' &&
+      typeof compareWindows === 'function' &&
+      typeof bestWindow === 'function' &&
+      typeof analytics.windowStatsRange === 'function',
+  )
 }
 
 console.log('\nwindowStats')
@@ -244,6 +254,103 @@ console.log('\nweeklySeries')
   check('Monday 00:00 lands in the next week', series[1].reps === 3, series)
 }
 
+console.log('\nmonthlySeries')
+{
+  const now = new Date(2026, 8, 16, 12).getTime()
+  const young = habit({
+    createdAt: new Date(2026, 8, 13, 12).getTime(),
+    history: [{ t: new Date(2026, 8, 14, 8).getTime(), amount: 1 }],
+  })
+  const youngSeries = monthlySeries(young, 12, now)
+  check(
+    'a four-day-old habit has one partial bucket and eleven pre-existence buckets',
+    youngSeries.length === 12 &&
+      youngSeries.filter((month) => month.existed).length === 1 &&
+      youngSeries.filter((month) => !month.existed).length === 11 &&
+      youngSeries.at(-1).isPartial &&
+      youngSeries.at(-1).daysIn === 4,
+    youngSeries,
+  )
+
+  const acrossNewYear = habit({
+    createdAt: new Date(2026, 11, 30, 12).getTime(),
+    history: [
+      { t: new Date(2026, 11, 31, 8).getTime(), amount: 2 },
+      { t: new Date(2027, 0, 2, 8).getTime(), amount: 1 },
+    ],
+  })
+  const yearSeries = monthlySeries(acrossNewYear, 3, new Date(2027, 0, 10, 12).getTime())
+  check(
+    'calendar-year boundaries keep events in their local month',
+    yearSeries.map((month) => month.key).join() === '2026-11,2026-12,2027-01' &&
+      yearSeries.map((month) => month.reps).join() === '0,2,1' &&
+      !yearSeries[0].existed &&
+      yearSeries[1].existed &&
+      yearSeries[2].existed,
+    yearSeries,
+  )
+
+  const dstHabit = habit({
+    createdAt: new Date(2026, 2, 1, 12).getTime(),
+    history: [{ t: new Date(2026, 2, 29, 8).getTime(), amount: 1 }],
+  })
+  const dstSeries = monthlySeries(dstHabit, 2, new Date(2026, 3, 5, 12).getTime())
+  check(
+    'a month containing the spring DST transition has exactly 31 calendar days',
+    dstSeries[0].key === '2026-03' && dstSeries[0].daysIn === 31 && dstSeries[0].scheduled === 31,
+    dstSeries[0],
+  )
+
+  const portfolioSeries = monthlySeries([young, acrossNewYear], 1, new Date(2027, 0, 10, 12).getTime())
+  check(
+    'portfolio months aggregate activity without inventing an adherence rate',
+    portfolioSeries[0].reps === 1 && portfolioSeries[0].activeDays === 1 && portfolioSeries[0].rate === null,
+    portfolioSeries[0],
+  )
+}
+
+console.log('\nlong-view comparisons')
+{
+  const now = new Date(2026, 8, 16, 12).getTime()
+  const realShape = habit({
+    title: 'Four-day habit',
+    createdAt: dayAtOffset(now, -3, 12),
+    history: [{ t: dayAtOffset(now, -2), amount: 1 }],
+  })
+  const comparison = compareWindows(realShape, 28, now)
+  const baselineGate = readiness(realShape, now).unlocks.find((unlock) => unlock.id === 'baseline28')
+  check(
+    'a habit only a few days old has no printable 28-day baseline',
+    comparison.enoughHistory === false && baselineGate.ready === false,
+    { comparison, baselineGate },
+  )
+  check('best 28-day window is null below 28 days of age', bestWindow(realShape, 28, now) === null)
+
+  const emptyHistory = habit({ createdAt: dayAtOffset(now, -59, 12) })
+  const flatComparison = compareWindows(emptyHistory, 28, now)
+  const tiedBest = bestWindow(emptyHistory, 28, now)
+  check(
+    'equal comparison windows are flat and tied best windows prefer the latest',
+    flatComparison.direction === 'flat' &&
+      tiedBest.end === new Date(2026, 8, 16).getTime() &&
+      tiedBest.start === new Date(2026, 7, 20).getTime(),
+    { flatComparison, tiedBest },
+  )
+
+  const shortAnalysis = analyzeHabit(realShape, [], now)
+  check(
+    'the 53-week heatmap prop is not set below 120 days of age',
+    shortAnalysis.pace.ageDays < 120 && shortAnalysis.longHeatmapWeeks === null,
+    { ageDays: shortAnalysis.pace.ageDays, weeks: shortAnalysis.longHeatmapWeeks },
+  )
+
+  const oldEnough = habit({ createdAt: dayAtOffset(now, -119, 12) })
+  check(
+    'the 53-week heatmap prop is set at 120 days of age',
+    analyzeHabit(oldEnough, [], now).longHeatmapWeeks === 53,
+  )
+}
+
 console.log('\ndayCompletion')
 {
   const now = new Date(2026, 8, 16, 12).getTime() // Wednesday
@@ -266,6 +373,7 @@ console.log('\nreadiness')
 {
   const now = new Date(2026, 8, 16, 12).getTime()
   const gateIds = ['forecast', 'momentum', 'hitRate28', 'timeOfDay', 'weekdayPattern']
+  gateIds.push('baseline28', 'monthOverMonth')
 
   const newHabit = habit({
     title: 'One rep, four days old',
