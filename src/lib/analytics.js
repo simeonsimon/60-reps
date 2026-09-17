@@ -47,6 +47,27 @@ export function dayCounts(habit) {
   return m
 }
 
+// Portfolio completion for one calendar day. Habits that were not created yet
+// and habits scheduled off are both excluded from the denominator.
+export function dayCompletion(habits, dayMs, now = Date.now()) {
+  const day = startOfDay(dayMs)
+  let scheduled = 0
+  let hit = 0
+
+  for (const habit of habits) {
+    if (day < firstDay(habit, now) || !isScheduledOn(habit, day)) continue
+    scheduled++
+    if ((dayCounts(habit).get(day) || 0) > 0) hit++
+  }
+
+  return {
+    scheduled,
+    hit,
+    pct: scheduled > 0 ? hit / scheduled : 0,
+    pending: day === startOfDay(now) && scheduled > 0 && hit < scheduled,
+  }
+}
+
 export function firstDay(habit, now = Date.now()) {
   let min = habit.createdAt || now
   for (const e of habit.history || []) if (e.t < min) min = e.t

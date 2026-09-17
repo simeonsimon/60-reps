@@ -6,7 +6,7 @@ import HabitCard from './HabitCard.jsx'
 
 // Full-viewport horizontal pager. Drag to swipe; snaps to the nearest card on
 // release based on offset/velocity. No navbar — the cards are the interface.
-export default function HabitCarousel({ onUnlock }) {
+export default function HabitCarousel({ onUnlock, onExit }) {
   const { habits, activeIndex, setActive } = useHabits()
   const containerRef = useRef(null)
   const [width, setWidth] = useState(() => (typeof window !== 'undefined' ? window.innerWidth : 0))
@@ -20,6 +20,15 @@ export default function HabitCarousel({ onUnlock }) {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+
+  useEffect(() => {
+    if (!onExit) return undefined
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onExit()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onExit])
 
   const n = habits.length
   const index = Math.min(activeIndex, Math.max(0, n - 1))

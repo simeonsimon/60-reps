@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useHabits } from '../store/StoreProvider.jsx'
 import { HABIT_TYPES, WEEKDAY_ORDER, WEEKDAY_SHORT } from '../lib/habits.js'
+import { SLOTS, suggestSlotFromTitle } from '../lib/slots.js'
 import { TEMPLATES } from '../data/templates.js'
 
 const EMOJIS = ['⛰️', '🏀', '🧪', '🏍️', '📚', '🏃', '💧', '🎸', '🧘', '🛏️', '🥗', '✍️', '💪', '⚡', '🃏', '📖']
@@ -31,6 +32,8 @@ export default function AddHabitPanel({ onClose, onImport }) {
   const [days, setDays] = useState(ALL_DAYS)
   const [anchorId, setAnchorId] = useState(null)
   const [reminderTime, setReminderTime] = useState('')
+  const [slot, setSlot] = useState('anytime')
+  const slotTouched = useRef(false)
 
   const canSave = title.trim().length > 0 && (type !== 'progress' || target > 0) && days.length > 0
 
@@ -42,6 +45,8 @@ export default function AddHabitPanel({ onClose, onImport }) {
     setEmoji(t.emoji)
     setDays(t.days ? [...t.days] : ALL_DAYS)
     setReminderTime(t.reminder || '')
+    setSlot(suggestSlotFromTitle(t.title))
+    slotTouched.current = false
     if (t.type === 'progress') {
       setTarget(t.target)
       setUnit(t.unit || 'reps')
@@ -65,6 +70,7 @@ export default function AddHabitPanel({ onClose, onImport }) {
       createdAt: now,
       sessionValue: 0,
       lastCompletedAt: null,
+      slot,
     }
     if (type === 'progress') {
       habit.target = Number(target)
@@ -121,13 +127,42 @@ export default function AddHabitPanel({ onClose, onImport }) {
         <input
           value={title}
           onChange={(e) => {
-            setTitle(e.target.value)
+            const nextTitle = e.target.value
+            setTitle(nextTitle)
             setTemplate(null)
+            if (!slotTouched.current) setSlot(suggestSlotFromTitle(nextTitle))
           }}
           placeholder="e.g. Read 10 pages"
           enterKeyHint="go"
           className="w-full rounded-2xl border border-line/10 bg-surface px-4 py-3 text-ink outline-none placeholder:text-muted focus:border-accent"
         />
+      </div>
+
+      <div>
+        <Label>Time of day</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {SLOTS.map((option) => {
+            const selected = slot === option.id
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  slotTouched.current = true
+                  setSlot(option.id)
+                }}
+                aria-pressed={selected}
+                className={`rounded-2xl border px-3 py-2.5 text-left transition-colors ${
+                  selected ? 'border-accent bg-accent-soft' : 'border-line/10 bg-surface'
+                }`}
+              >
+                <span className="block text-sm font-semibold text-ink">{option.label}</span>
+                <span className="mt-0.5 block text-xs2 text-muted">{option.hint}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p className="mt-1.5 text-xs text-muted">Suggested from the title; tap a slot to override it.</p>
       </div>
 
       <div>
