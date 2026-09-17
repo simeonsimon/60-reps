@@ -9,6 +9,7 @@ const {
   compareWindows,
   dayCompletion,
   forecast,
+  habitHeadline,
   longestStreak,
   masteryDate,
   monthlySeries,
@@ -84,6 +85,7 @@ console.log('\nanalytics export surface')
       typeof bestWindow === 'function' &&
       typeof analytics.windowStatsRange === 'function',
   )
+  check('meaning-layer headline API is exported', typeof habitHeadline === 'function')
 }
 
 console.log('\nwindowStats')
@@ -351,6 +353,88 @@ console.log('\nlong-view comparisons')
   )
 }
 
+console.log('\nhabitHeadline priority ladder')
+{
+  const now = new Date(2026, 8, 16, 12).getTime() // Wednesday
+  const fixtures = [
+    {
+      name: 'scheduled-today nudge wins first',
+      fixture: habit({
+        createdAt: dayAtOffset(now, -50, 12),
+        history: [{ t: dayAtOffset(now, -1), amount: 8 }],
+      }),
+      expected: 'Today is scheduled',
+    },
+    {
+      name: 'live streak is protected after today is logged',
+      fixture: habit({
+        createdAt: dayAtOffset(now, -2, 12),
+        history: [-1, 0].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+      }),
+      expected: '2-day streak alive',
+    },
+    {
+      name: 'three-day pause is named on an off-day',
+      fixture: habit({
+        days: [0],
+        createdAt: dayAtOffset(now, -20, 12),
+        history: [{ t: dayAtOffset(now, -3), amount: 4 }],
+      }),
+      expected: '3 days paused',
+    },
+    {
+      name: 'eligible 28-day comparison outranks reps remaining',
+      fixture: habit({
+        days: [4],
+        createdAt: dayAtOffset(now, -59, 12),
+        history: [
+          { t: dayAtOffset(now, -30), amount: 5 },
+          { t: dayAtOffset(now, -1), amount: 10 },
+        ],
+      }),
+      expected: '10 reps vs 5 before',
+    },
+    {
+      name: 'reps remaining appears before the empty invitation',
+      fixture: habit({
+        days: [4],
+        createdAt: dayAtOffset(now, -1, 12),
+        history: [{ t: dayAtOffset(now, -1), amount: 7 }],
+      }),
+      expected: '53 reps remain',
+    },
+    {
+      name: 'an empty off-day gets the invitation',
+      fixture: habit({ days: [4], createdAt: now }),
+      expected: 'No reps yet',
+    },
+  ]
+
+  const headlines = fixtures.map(({ fixture }) => habitHeadline(fixture, now))
+  fixtures.forEach(({ name, expected }, index) => {
+    check(name, headlines[index].text.includes(expected), headlines[index])
+  })
+  check(
+    'every headline is one line and at most 90 characters',
+    headlines.every(({ text }) => !text.includes('\n') && text.length <= 90),
+    headlines,
+  )
+
+  const synthetic = Array.from({ length: 14 }, (_, habitIndex) => habit({
+    id: `bench-${habitIndex}`,
+    createdAt: dayAtOffset(now, -220, 12),
+    history: Array.from({ length: 200 }, (_, eventIndex) => ({
+      t: dayAtOffset(now, -eventIndex),
+      amount: 1,
+    })),
+  }))
+  const started = performance.now()
+  for (const fixture of synthetic) habitHeadline(fixture, now)
+  const elapsed = performance.now() - started
+  console.log(`  benchmark 14 habits × 200 events: ${elapsed.toFixed(3)}ms`)
+  check('headline batch stays under 50ms', elapsed < 50, { elapsed })
+}
+
 console.log('\ndayCompletion')
 {
   const now = new Date(2026, 8, 16, 12).getTime() // Wednesday
@@ -498,6 +582,73 @@ console.log('\ninsights')
     'warming-up fires below three total reps',
     analyzeHabit(cases[0].fixture, [], now).pace.totalReps < 3 &&
       analyzeHabit(cases[0].fixture, [], now).insights.some((insight) => insight.id === 'warming-up'),
+  )
+}
+
+console.log('\nmeaning-layer insights')
+{
+  const now = new Date(2026, 8, 16, 12).getTime()
+  const strongerRecent = habit({
+    title: 'Stronger recent baseline',
+    createdAt: dayAtOffset(now, -70, 12),
+    history: [
+      ...[-55, -48, -41, -34].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+      ...[-27, -24, -21, -18, -15, -12, -9, -6, -3, 0].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+    ],
+  })
+  const weakerRecent = habit({
+    title: 'Weaker recent baseline',
+    createdAt: dayAtOffset(now, -70, 12),
+    history: [
+      ...[-55, -52, -49, -46, -43, -40, -37, -34, -31, -28].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+      ...[-21, -14, -7, 0].map((offset) => ({ t: dayAtOffset(now, offset), amount: 1 })),
+    ],
+  })
+  const strongerInsights = analyzeHabit(strongerRecent, [], now).insights
+  const weakerInsights = analyzeHabit(weakerRecent, [], now).insights
+  check('an improving 28-day baseline emits baseline-better', strongerInsights.some((insight) => insight.id === 'baseline-better'), strongerInsights)
+  check(
+    'a declining 28-day baseline emits baseline-worse with a best-window action',
+    weakerInsights.some((insight) => insight.id === 'baseline-worse' && insight.action?.includes('stretch')),
+    weakerInsights,
+  )
+  check('eligible history emits the best-window insight', strongerInsights.some((insight) => insight.id === 'best-window'), strongerInsights)
+
+  const monthlyHistory = []
+  for (let day = 1; day <= 10; day++) monthlyHistory.push({ t: new Date(2026, 6, day, 8).getTime(), amount: 1 })
+  for (let day = 1; day <= 20; day++) monthlyHistory.push({ t: new Date(2026, 7, day, 8).getTime(), amount: 1 })
+  for (let day = 1; day <= 16; day++) monthlyHistory.push({ t: new Date(2026, 8, day, 8).getTime(), amount: 1 })
+  const monthHabit = habit({
+    title: 'Month-over-month fixture',
+    createdAt: new Date(2026, 5, 1, 12).getTime(),
+    history: monthlyHistory,
+  })
+  const monthInsights = analyzeHabit(monthHabit, [], now).insights
+  check('two complete months emit month-over-month', monthInsights.some((insight) => insight.id === 'month-over-month'), monthInsights)
+
+  const portfolioHabits = [
+    habit({
+      id: 'risk-a',
+      createdAt: dayAtOffset(now, -30, 12),
+      history: [{ t: dayAtOffset(now, -10), amount: 3 }],
+    }),
+    habit({
+      id: 'risk-b',
+      createdAt: dayAtOffset(now, -30, 12),
+      history: [{ t: dayAtOffset(now, -20), amount: 1 }],
+    }),
+  ]
+  const emitted = [
+    ...strongerInsights,
+    ...weakerInsights,
+    ...monthInsights,
+    ...analytics.analyzePortfolio(portfolioHabits, now).insights,
+  ]
+  const warnings = emitted.filter((insight) => insight.tone === 'warn')
+  check(
+    'every emitted warning insight has a concrete action',
+    warnings.length > 0 && warnings.every((insight) => typeof insight.action === 'string' && insight.action.length > 0),
+    warnings,
   )
 }
 

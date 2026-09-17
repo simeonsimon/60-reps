@@ -77,6 +77,14 @@ export default function App() {
     [setActive],
   )
   const handleExitFocus = useCallback(() => setView('agenda'), [])
+  const handleOpenStats = useCallback(
+    (habitId) => {
+      const nextIndex = habits.findIndex((habit) => habit.id === habitId)
+      if (nextIndex !== -1) setActive(nextIndex)
+      setSheet('stats')
+    },
+    [habits, setActive],
+  )
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden bg-base">
@@ -146,7 +154,7 @@ export default function App() {
           view === 'agenda' ? (
             <AgendaView onFocus={handleFocus} onUnlock={handleUnlock} />
           ) : (
-            <HabitCarousel onUnlock={handleUnlock} onExit={handleExitFocus} />
+            <HabitCarousel onUnlock={handleUnlock} onExit={handleExitFocus} onOpenStats={handleOpenStats} />
           )
         ) : (
           <div className="grid h-full place-items-center px-8 text-center">

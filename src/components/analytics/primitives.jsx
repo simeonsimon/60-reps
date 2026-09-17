@@ -57,9 +57,44 @@ export function InsightCard({ ins, index = 0 }) {
       <div className="min-w-0">
         <div className="text-sm font-bold text-ink">{ins.title}</div>
         <p className="mt-0.5 text-sm2 leading-relaxed text-muted">{ins.text}</p>
+        {ins.action && (
+          <p
+            className="mt-2 border-l-2 pl-2 text-xs2 font-medium leading-relaxed text-muted/80"
+            style={{ borderColor: tone.fg }}
+          >
+            {ins.action}
+          </p>
+        )}
       </div>
     </div>
   )
+}
+
+export function HabitHeadline({ headline, onClick, className = '' }) {
+  if (!headline) return null
+  const tone = TONE[headline.tone] || TONE.info
+  const content = (
+    <>
+      <span aria-hidden="true" className="shrink-0">{headline.icon}</span>
+      <span className="truncate">{headline.text}</span>
+    </>
+  )
+  const classes = `flex min-w-0 max-w-full items-center gap-1.5 text-left text-xs2 font-medium ${className}`
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${classes} rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+        style={{ color: tone.fg }}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return <span className={classes} style={{ color: tone.fg }}>{content}</span>
 }
 
 // Structured's saturated rounded-squircle icon tile — an accent-soft fill
